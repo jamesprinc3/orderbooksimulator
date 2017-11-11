@@ -8,15 +8,15 @@ import order.{Order, OrderType}
 class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util.Queue[Order]) {
 
   private var _orderId = 0
-  private val tick = 1
-  private val lot = 1
+  private val _tickSize = 1
+  private val _lotSize = 1
 
   def getBidPrice(): Unit = {
-
+    bidSide.getBestPrice()
   }
 
   def getAskPrice(): Unit = {
-
+    askSide.getBestPrice()
   }
 
   private def getOrderID: Int = {
@@ -43,7 +43,7 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util
     if (order.price >= askSide.getBestPrice()) {
       askSide.addMarketOrder(order)
     } else {
-      bidSide.addLimitOrder(order)
+      bidSide.addLimitOrder(order, getOrderID)
     }
   }
 
@@ -51,7 +51,7 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util
     if (order.price <= bidSide.getBestPrice()) {
       bidSide.addMarketOrder(order)
     } else {
-      askSide.addLimitOrder(order)
+      askSide.addLimitOrder(order, getOrderID)
     }
   }
 
