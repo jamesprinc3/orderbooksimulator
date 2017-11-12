@@ -19,6 +19,7 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util
     askSide.getBestPrice
   }
 
+  // TODO: perhaps this logic should be moved elsewhere?
   private def getOrderID: Int = {
     _orderId += 1
     _orderId

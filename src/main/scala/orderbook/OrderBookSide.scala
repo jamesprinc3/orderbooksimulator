@@ -4,13 +4,13 @@ import java.time.LocalDateTime
 
 import order.{Order, OrderType}
 
-import scala.collection.mutable.TreeSet
+import scala.collection.mutable
 
 object OrderBookSideType extends Enumeration {
   val Bid, Ask = Value
 }
 
-class OrderBookSide(sideType: OrderBookSideType.Value) {
+class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEntry] = List()) {
 
   // TODO: match on order book type?
   implicit val ordering: Ordering[OrderBookEntry] = (x: OrderBookEntry, y: OrderBookEntry) => {
@@ -34,12 +34,18 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
       res *= -1
     }
 
+    if (x.id == y.id) {
+      res = 0
+    }
+
     res
   }
 
+  private var activeOrders = mutable.TreeSet[OrderBookEntry]().++(orders)
 
-
-  private val activeOrders = TreeSet[OrderBookEntry]()
+  def getActiveOrders: mutable.TreeSet[OrderBookEntry] = {
+    activeOrders
+  }
 
   // TODO: Error handling
   // TODO: is adding an order with the same ID as an existing order a fail?
@@ -117,13 +123,10 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
     getOrdersAtPrice(price).map(_.price).sum
   }
 
-  def cancelOrder(orderId: Int): Boolean = {
-    val orderToCancel = activeOrders.find(order => order.id == orderId)
-    if (orderToCancel.isDefined) {
-      activeOrders.remove(orderToCancel.get)
-    } else {
-      false
-    }
+  def cancelOrder(orderId: Int): Option[OrderBookEntry] = {
+    val orderToCancel = activeOrders.find(order => order.id == orderId).getOrElse(return None)
+    activeOrders.remove(orderToCancel)
+    Some(orderToCancel)
   }
 
   def getBestPrice: Int = {
