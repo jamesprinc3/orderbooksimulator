@@ -42,6 +42,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
   private val activeOrders = TreeSet[OrderBookEntry]()
 
   // TODO: Error handling
+  // TODO: is adding an order with the same ID as an existing order a fail?
   def addLimitOrder(order: Order, id: Int): Unit = {
     // Need to check that if we're Bid side then we're getting a buy order here
     sideType match {
@@ -62,7 +63,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
 
   // TODO: Error handling
   // TODO: Do market orders just have a size, rather than a price?
-  // TODO: This function is fairly mucky
+  // TODO: This function is fairly mucky, use generics instead
   /**
     * @param order The order which we want to match on the market
     * @return None if the order was matched in its entirety.
@@ -74,11 +75,11 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
     sideType match {
       case OrderBookSideType.Bid => if (order.orderType == OrderType.Buy) {
         println("Expected order type Sell, but was Buy")
-        return
+        return Some(order)
       }
       case OrderBookSideType.Ask => if (order.orderType == OrderType.Sell) {
         println("Expected order type Buy, but was Sell")
-        return
+        return Some(order)
       }
     }
 
@@ -86,7 +87,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
     if (depthAtPrice >= order.size) {
       var remainingSize = order.size
       val iter = activeOrders.iterator
-      var activeOrder: OrderBookEntry = _
+      var activeOrder: OrderBookEntry = null
       while (remainingSize > 0 && iter.hasNext) {
         activeOrder = iter.next()
         remainingSize -= activeOrder.size
@@ -104,25 +105,24 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
         val partialActiveOrder = activeOrder.copy(size = -1*remainingSize)
         activeOrders.+=(partialActiveOrder)
       }
-
     }
-
+    None
   }
 
-  private def getOrdersAtPrice(price: Int) = {
-    activeOrders.filter(order => order.price == price)
+  private def getOrdersAtPrice(price: Int): Iterator[OrderBookEntry] = {
+    activeOrders.filter(order => order.price == price).iterator
   }
 
-  private def getDepth(price: Int) = {
-    getOrdersAtPrice(price).reduce((order1, order2) => order1.price + order2.price)
+  private def getDepth(price: Int): Int = {
+    getOrdersAtPrice(price).map(_.price).sum
   }
 
   def cancelOrder(orderId: Int): Boolean = {
-    val orderToCancel = activeOrders.filter(order => order.id == orderId).headOption
+    val orderToCancel = activeOrders.find(order => order.id == orderId)
     if (orderToCancel.isDefined) {
       activeOrders.remove(orderToCancel.get)
     } else {
-      false 
+      false
     }
   }
 
