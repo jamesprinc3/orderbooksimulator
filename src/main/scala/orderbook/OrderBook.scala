@@ -11,12 +11,12 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util
   private val _tickSize = 1
   private val _lotSize = 1
 
-  def getBidPrice(): Unit = {
-    bidSide.getBestPrice()
+  def getBidPrice: Unit = {
+    bidSide.getBestPrice
   }
 
-  def getAskPrice(): Unit = {
-    askSide.getBestPrice()
+  def getAskPrice: Unit = {
+    askSide.getBestPrice
   }
 
   private def getOrderID: Int = {
@@ -40,7 +40,7 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util
   }
 
   private def submitBuyOrder(order: Order): Unit = {
-    if (order.price >= askSide.getBestPrice()) {
+    if (order.price >= askSide.getBestPrice) {
       askSide.addMarketOrder(order)
     } else {
       bidSide.addLimitOrder(order, getOrderID)
@@ -48,7 +48,7 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util
   }
 
   private def submitSellOrder(order: Order): Unit = {
-    if (order.price <= bidSide.getBestPrice()) {
+    if (order.price <= bidSide.getBestPrice) {
       bidSide.addMarketOrder(order)
     } else {
       askSide.addLimitOrder(order, getOrderID)
