@@ -62,7 +62,14 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
 
   // TODO: Error handling
   // TODO: Do market orders just have a size, rather than a price?
-  def addMarketOrder(order: Order): Unit = {
+  // TODO: This function is fairly mucky
+  /**
+    * @param order The order which we want to match on the market
+    * @return None if the order was matched in its entirety.
+    *         Some(order) if we were unable to match the order fully, in this situation the order book can
+    *         choose whether to re-enter this as a limit order.
+    */
+  def addMarketOrder(order: Order): Option[Order] = {
     // Bid side will accept a sell order here
     sideType match {
       case OrderBookSideType.Bid => if (order.orderType == OrderType.Buy) {
@@ -77,20 +84,27 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
 
     val depthAtPrice = getDepth(order.price)
     if (depthAtPrice >= order.size) {
-      // TODO: partial matching of orders
       var remainingSize = order.size
-      getOrdersAtPrice(order.price).foreach(activeOrder => {
-        if (remainingSize - activeOrder.size >= 0) {
-          remainingSize -= activeOrder.size
-        } else {
-          activeOrder.copy(size = (activeOrder - remainingSize))
-        }
+      val iter = activeOrders.iterator
+      var activeOrder: OrderBookEntry = _
+      while (remainingSize > 0 && iter.hasNext) {
+        activeOrder = iter.next()
+        remainingSize -= activeOrder.size
+        activeOrders.remove(activeOrder)
+      }
 
-      })
-    } else {
-      // TODO: partial filling of orders
-      println("Not enough depth to complete order")
-      return
+      if (remainingSize > 0) {
+        // Enter this partially matched order as a limit order (on the other side of the book!)
+        val partialIncomingOrder = order.copy(size = remainingSize)
+        return Some(partialIncomingOrder)
+      }
+
+      if (remainingSize < 0) {
+        // Put this partially matched order back in our active orders as a limit order
+        val partialActiveOrder = activeOrder.copy(size = -1*remainingSize)
+        activeOrders.+=(partialActiveOrder)
+      }
+
     }
 
   }
@@ -107,8 +121,8 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
     activeOrders.filter(order => order.id != orderId)
   }
 
-  def getBestPrice(): Int = {
-    0
+  def getBestPrice: Int = {
+    activeOrders.head.price
   }
 
   // TODO: calculate some metrics (as outlined in the Gould paper for this side of the order book here, or maybe that should be moved out to another class? e.g. OrderBookMetrics
