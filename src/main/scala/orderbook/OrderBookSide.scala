@@ -49,6 +49,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
 
   // TODO: Error handling
   // TODO: is adding an order with the same ID as an existing order a fail?
+  // TODO: split the order handling off into a different class?
   def addLimitOrder(order: Order, id: Int): Unit = {
     // Need to check that if we're Bid side then we're getting a buy order here
     sideType match {
@@ -90,7 +91,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     }
 
     val depthAtPrice = getDepth(order.price)
-    if (depthAtPrice >= order.size) {
+    if (depthAtPrice >= 0) {
       var remainingSize = order.size
       val iter = activeOrders.iterator
       var activeOrder: OrderBookEntry = null
@@ -111,8 +112,9 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
         val partialActiveOrder = activeOrder.copy(size = -1*remainingSize)
         activeOrders.+=(partialActiveOrder)
       }
+      return None
     }
-    None
+    Some(order)
   }
 
   private def getOrdersAtPrice(price: Int): Iterator[OrderBookEntry] = {
@@ -120,7 +122,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
   }
 
   private def getDepth(price: Int): Int = {
-    getOrdersAtPrice(price).map(_.price).sum
+    getOrdersAtPrice(price).map(_.size).sum
   }
 
   def cancelOrder(orderId: Int): Option[OrderBookEntry] = {
