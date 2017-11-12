@@ -118,7 +118,12 @@ class OrderBookSide(sideType: OrderBookSideType.Value) {
   }
 
   def cancelOrder(orderId: Int): Boolean = {
-    activeOrders.filter(order => order.id != orderId)
+    val orderToCancel = activeOrders.filter(order => order.id == orderId).headOption
+    if (orderToCancel.isDefined) {
+      activeOrders.remove(orderToCancel.get)
+    } else {
+      false 
+    }
   }
 
   def getBestPrice: Int = {
