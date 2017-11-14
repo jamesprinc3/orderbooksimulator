@@ -7,7 +7,7 @@ import order.{Order, OrderType}
 import orderbook.OrderBook
 
 // A trader which just matches the best price (and therefore adds depth at the edge of the book).
-class BestPriceRateTrader(orderBook: OrderBook, orderType: OrderType.Value, rate: Int, time: LocalDateTime)
+class BestPriceRateTrader(orderBook: OrderBook, orderType: OrderType.Value, rate: Int, private var time: LocalDateTime)
   extends RateTrader(orderBook, orderType, rate) {
 
   private val size = 10
@@ -24,5 +24,11 @@ class BestPriceRateTrader(orderBook: OrderBook, orderType: OrderType.Value, rate
     Range(0, tradesNeeded).foreach(_ => {
       orderBook.submitOrder(Order(orderType, price, size))
     })
+
+    time = newTime
+  }
+
+  def getTime: LocalDateTime = {
+    time
   }
 }

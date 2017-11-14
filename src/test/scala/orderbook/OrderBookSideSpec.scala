@@ -1,7 +1,8 @@
+package orderbook
+
 import java.time.LocalDateTime
 
 import order.{Order, OrderType}
-import orderbook.{OrderBookEntry, OrderBookSide, OrderBookSideType}
 import org.scalatest._
 
 class OrderBookSideSpec extends FlatSpec {

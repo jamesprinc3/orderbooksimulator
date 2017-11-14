@@ -1,22 +1,20 @@
 package orderbook
 
-import java.util
-
 import order.{Order, OrderType}
 
 
-class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util.Queue[Order]) {
+class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
 
   private var _orderId = 0
   private val _tickSize = 1
   private val _lotSize = 1
 
   def getBidPrice: Int = {
-    bidSide.getBestPrice
+    bidSide.getBestPrice.getOrElse(return 0)
   }
 
   def getAskPrice: Int = {
-    askSide.getBestPrice
+    askSide.getBestPrice.getOrElse(return Integer.MAX_VALUE/2)
   }
 
   // TODO: perhaps this logic should be moved elsewhere?
@@ -29,35 +27,42 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util
     order.orderType match {
       case OrderType.Buy => {
         submitBuyOrder(order)
-        getOrderID
       }
       case OrderType.Sell => {
         submitSellOrder(order)
-        getOrderID
       }
       case _ =>
-        0
+        -1
     }
   }
 
-  private def submitBuyOrder(order: Order): Unit = {
-    if (order.price >= askSide.getBestPrice) {
+  private def submitBuyOrder(order: Order): Int = {
+    val askPrice = askSide.getBestPrice
+    val orderId = getOrderID
+
+    if (askPrice.isEmpty || order.price < askPrice.get) {
+      bidSide.addLimitOrder(order, orderId)
+    } else {
       askSide.addMarketOrder(order)
-    } else {
-      bidSide.addLimitOrder(order, getOrderID)
     }
+    orderId
   }
 
-  private def submitSellOrder(order: Order): Unit = {
-    if (order.price <= bidSide.getBestPrice) {
-      bidSide.addMarketOrder(order)
+  private def submitSellOrder(order: Order): Int = {
+    val bidPrice = askSide.getBestPrice
+    val orderId = getOrderID
+
+    if (bidPrice.isEmpty || order.price > bidPrice.get) {
+      askSide.addLimitOrder(order, orderId)
     } else {
-      askSide.addLimitOrder(order, getOrderID)
+      bidSide.addMarketOrder(order)
     }
+    orderId
   }
 
   def cancelOrder(orderId: Int): Boolean = {
-    true
+    askSide.cancelOrder(orderId).isDefined ||
+      bidSide.cancelOrder(orderId).isDefined
   }
 
 

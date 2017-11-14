@@ -131,8 +131,9 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     Some(orderToCancel)
   }
 
-  def getBestPrice: Int = {
-    activeOrders.head.price
+  def getBestPrice: Option[Int] = {
+    val firstOrder = activeOrders.headOption.getOrElse(return None)
+    Some(firstOrder.price)
   }
 
   // TODO: calculate some metrics (as outlined in the Gould paper for this side of the order book here, or maybe that should be moved out to another class? e.g. OrderBookMetrics
