@@ -11,11 +11,11 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orderQueue: util
   private val _tickSize = 1
   private val _lotSize = 1
 
-  def getBidPrice: Unit = {
+  def getBidPrice: Int = {
     bidSide.getBestPrice
   }
 
-  def getAskPrice: Unit = {
+  def getAskPrice: Int = {
     askSide.getBestPrice
   }
 

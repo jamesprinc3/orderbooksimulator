@@ -100,7 +100,7 @@ class OrderBookSideSpec extends FlatSpec {
   }
 
   "getBestPrice" should "display the best price with one order" in {
-    assert(singularOrderBookSide.getBestPrice == bestSellPrice)
+    assert(singularOrderBookSide.getBestPrice == bestBuyPrice)
   }
 
   it should "display the best price with many orders of the same price" in {
