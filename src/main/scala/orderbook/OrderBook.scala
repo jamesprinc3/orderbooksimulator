@@ -60,6 +60,11 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
     orderId
   }
 
+  def getOrder(orderId: Int): Option[OrderBookEntry] = {
+    val allOrders = askSide.getActiveOrders ++ bidSide.getActiveOrders
+    allOrders.find(order => order.id == orderId)
+  }
+
   def cancelOrder(orderId: Int): Boolean = {
     askSide.cancelOrder(orderId).isDefined ||
       bidSide.cancelOrder(orderId).isDefined
