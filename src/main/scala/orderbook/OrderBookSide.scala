@@ -2,7 +2,8 @@ package orderbook
 
 import java.time.LocalDateTime
 
-import order.{Order, OrderType}
+import order.{Order, OrderType, Trade}
+import trader.Trader
 
 import scala.collection.mutable
 
@@ -34,7 +35,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
       res *= -1
     }
 
-    if (x.id == y.id) {
+    if (x.orderId == y.orderId) {
       res = 0
     }
 
@@ -50,7 +51,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
   // TODO: Error handling
   // TODO: is adding an order with the same ID as an existing order a fail?
   // TODO: split the order handling off into a different class?
-  def addLimitOrder(order: Order, id: Int): Unit = {
+  def addLimitOrder(trader: Trader, order: Order, id: Int): Unit = {
     // Need to check that if we're Bid side then we're getting a buy order here
     sideType match {
       case OrderBookSideType.Bid => if (order.orderType == OrderType.Sell) {
@@ -63,7 +64,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
       }
     }
 
-    val orderBookEntry = OrderBookEntry(id, LocalDateTime.now(), order.price, order.size)
+    val orderBookEntry = OrderBookEntry(trader, id, LocalDateTime.now(), order.price, order.size)
 
     activeOrders.+=(orderBookEntry)
   }
@@ -77,7 +78,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     *         Some(order) if we were unable to match the order fully, in this situation the order book can
     *         choose whether to re-enter this as a limit order.
     */
-  def addMarketOrder(order: Order): Option[Order] = {
+  def addMarketOrder(trader: Trader, order: Order): Option[Order] = {
     // Bid side will accept a sell order here
     sideType match {
       case OrderBookSideType.Bid => if (order.orderType == OrderType.Buy) {
@@ -99,6 +100,8 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
         activeOrder = iter.next()
         remainingSize -= activeOrder.size
         activeOrders.remove(activeOrder)
+
+        reconcile(trader, activeOrder)
       }
 
       if (remainingSize > 0) {
@@ -117,6 +120,20 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     Some(order)
   }
 
+  protected[orderbook] def reconcile(maker: Trader, activeOrder: OrderBookEntry) = {
+    val taker = activeOrder.trader
+    val trade = sideType match {
+      case OrderBookSideType.Bid =>
+        Trade(taker.id, maker.id, activeOrder.price, activeOrder.size)
+      case OrderType.Sell =>
+        Trade(maker.id, taker.id, activeOrder.price, activeOrder.size)
+    }
+    // TODO: submit the trade to some kind of transaction log
+
+    maker.updateState(trade)
+    taker.updateState(trade)
+  }
+
   private def getOrdersAtPrice(price: Int): Iterator[OrderBookEntry] = {
     activeOrders.filter(order => order.price == price).iterator
   }
@@ -126,7 +143,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
   }
 
   def cancelOrder(orderId: Int): Option[OrderBookEntry] = {
-    val orderToCancel = activeOrders.find(order => order.id == orderId).getOrElse(return None)
+    val orderToCancel = activeOrders.find(order => order.orderId == orderId).getOrElse(return None)
     activeOrders.remove(orderToCancel)
     Some(orderToCancel)
   }

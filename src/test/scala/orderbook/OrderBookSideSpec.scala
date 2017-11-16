@@ -49,7 +49,7 @@ class OrderBookSideSpec extends FlatSpec {
     orderBookSide.addLimitOrder(higherPricedOrder, 0)
     orderBookSide.addLimitOrder(basicBuyOrder, 1)
 
-    assert(orderBookSide.getActiveOrders.head.id == 1)
+    assert(orderBookSide.getActiveOrders.head.orderId == 1)
   }
 
   it should "assign correct priority due to arrival time (two orders)" in {
@@ -58,7 +58,7 @@ class OrderBookSideSpec extends FlatSpec {
     orderBookSide.addLimitOrder(basicBuyOrder, 0)
     orderBookSide.addLimitOrder(basicBuyOrder, 1)
 
-    assert(orderBookSide.getActiveOrders.head.id == 0)
+    assert(orderBookSide.getActiveOrders.head.orderId == 0)
   }
 
   "addMarketOrder" should "not match in an empty book" in {

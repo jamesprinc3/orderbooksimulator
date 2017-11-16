@@ -1,13 +1,19 @@
 package orderbook
 
 import order.{Order, OrderType}
+import trader.Trader
 
-
+// TODO: poke a hole in this class to allow access to ask/bid sides?
 class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
 
   private var _orderId = 0
   private val _tickSize = 1
   private val _lotSize = 1
+  // TODO: add minPrice / maxPrice?
+  // Negative prices dont make sense anyway, so should probably put this in
+
+  //TODO: transaction record
+  // It would be nice to see what has gone on.
 
   def getBidPrice: Int = {
     bidSide.getBestPrice.getOrElse(return 0)
@@ -62,14 +68,12 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
 
   def getOrder(orderId: Int): Option[OrderBookEntry] = {
     val allOrders = askSide.getActiveOrders ++ bidSide.getActiveOrders
-    allOrders.find(order => order.id == orderId)
+    allOrders.find(order => order.orderId == orderId)
   }
 
   def cancelOrder(orderId: Int): Boolean = {
     askSide.cancelOrder(orderId).isDefined ||
       bidSide.cancelOrder(orderId).isDefined
   }
-
-
 
 }

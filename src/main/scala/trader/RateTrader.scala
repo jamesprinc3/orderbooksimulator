@@ -8,9 +8,12 @@ import order.OrderType
 // A Trader which submits orders at a given rate
 // TODO: virtual clock?
 // rate is mean orders per second
-abstract class RateTrader(orderBook: OrderBook, orderType: OrderType.Value, rate: Int) extends Trader(orderBook) {
+abstract class RateTrader(orderType: OrderType.Value,
+                          rate: Int,
+                          traderParams: TraderParams)
+    extends Trader(traderParams) {
 
-  // This way we can vary the tick size, for optimisng TWAP stuff perhaps?
+  // This way we can vary the size between steps, for optimisng TWAP stuff perhaps?
   def step(newTime: LocalDateTime)
 
 }

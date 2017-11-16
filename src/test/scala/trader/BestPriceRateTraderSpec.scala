@@ -1,9 +1,10 @@
+package trader
+
 import java.time.LocalDateTime
 
 import order.OrderType
 import orderbook.{OrderBook, OrderBookSide, OrderBookSideType}
 import org.scalatest.FlatSpec
-import trader.BestPriceRateTrader
 
 class BestPriceRateTraderSpec extends FlatSpec {
 
