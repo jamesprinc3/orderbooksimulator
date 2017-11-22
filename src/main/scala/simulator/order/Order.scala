@@ -1,4 +1,4 @@
-package order
+package simulator.order
 
 object OrderType extends Enumeration {
   val Buy, Sell = Value

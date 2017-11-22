@@ -1,10 +1,10 @@
-package trader
+package simulator.trader
 
 import java.time.LocalDateTime
 
-import order.Trade
+import simulator.order.Trade
 
-// TODO: trader factory?
+// TODO: simulator.trader factory?
 abstract class Trader(traderParams: TraderParams) {
 
   val id: Int = traderParams.id

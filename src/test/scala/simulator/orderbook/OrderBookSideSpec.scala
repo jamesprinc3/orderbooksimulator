@@ -1,9 +1,9 @@
-package orderbook
+package simulator.orderbook
 
 
-import order.{Order, OrderType}
+import simulator.order.{Order, OrderType}
 import org.scalatest._
-import trader.{TestTrader, TraderParams}
+import simulator.trader.{TestTrader, TraderParams}
 
 class OrderBookSideSpec extends FlatSpec {
 
@@ -20,19 +20,18 @@ class OrderBookSideSpec extends FlatSpec {
   val basicSellOrder = Order(OrderType.Sell, bestSellPrice, standardOrderSize)
   def singularOrderBookSide: OrderBookSide = OrderBookSideHelper.getBidSide(List(basicBuyOrder))
 
-  "addLimitOrder" should "add limit order to activeOrders" in {
+  "addLimitOrder" should "add limit simulator.order to activeOrders" in {
     val orderBookSide = emptyOrderBookSide
 
-    orderBookSide.addLimitOrder(null, basicBuyOrder, 0)
+    orderBookSide.addLimitOrder(trader, basicBuyOrder, 0)
 
     assert(orderBookSide.getActiveOrders.nonEmpty)
   }
 
-  // TODO: this test should die with generics in there
-  it should "reject order of incorrect type order to activeOrders" in {
+  it should "reject simulator.order of incorrect type simulator.order to activeOrders" in {
     val orderBookSide = emptyOrderBookSide
 
-    orderBookSide.addLimitOrder(null, basicSellOrder, 0)
+    orderBookSide.addLimitOrder(trader, basicSellOrder, 0)
 
     assert(orderBookSide.getActiveOrders.isEmpty)
   }
@@ -41,8 +40,8 @@ class OrderBookSideSpec extends FlatSpec {
     val orderBookSide = emptyOrderBookSide
 
     val higherPricedOrder = Order(OrderType.Buy, bestBuyPrice-1, 10)
-    orderBookSide.addLimitOrder(null, higherPricedOrder, 0)
-    orderBookSide.addLimitOrder(null, basicBuyOrder, 1)
+    orderBookSide.addLimitOrder(trader, higherPricedOrder, 0)
+    orderBookSide.addLimitOrder(trader, basicBuyOrder, 1)
 
     assert(orderBookSide.getActiveOrders.head.orderId == 1)
   }
@@ -50,8 +49,8 @@ class OrderBookSideSpec extends FlatSpec {
   it should "assign correct priority due to arrival time (two orders)" in {
     val orderBookSide = emptyOrderBookSide
 
-    orderBookSide.addLimitOrder(null, basicBuyOrder, 0)
-    orderBookSide.addLimitOrder(null, basicBuyOrder, 1)
+    orderBookSide.addLimitOrder(trader, basicBuyOrder, 0)
+    orderBookSide.addLimitOrder(trader, basicBuyOrder, 1)
 
     assert(orderBookSide.getActiveOrders.head.orderId == 0)
   }
@@ -62,7 +61,7 @@ class OrderBookSideSpec extends FlatSpec {
     assert(orderBookSide.addMarketOrder(trader, basicSellOrder).isDefined)
   }
 
-  it should "match exactly one order of same size" in {
+  it should "match exactly one simulator.order of same size" in {
     val orderBookSide = emptyOrderBookSide
 
     orderBookSide.addLimitOrder(trader, basicBuyOrder, 0)
@@ -74,7 +73,7 @@ class OrderBookSideSpec extends FlatSpec {
   }
 
   // TODO: should use 2 different traders here, really
-  it should "partially match exactly one active order of same size" in {
+  it should "partially match exactly one active simulator.order of same size" in {
     val orderBookSide = emptyOrderBookSide
 
     orderBookSide.addLimitOrder(trader, basicBuyOrder, 0)
@@ -85,7 +84,7 @@ class OrderBookSideSpec extends FlatSpec {
     assert(orderBookSide.getActiveOrders.head.size == 1)
   }
 
-  it should "partially match exactly one incoming order" in {
+  it should "partially match exactly one incoming simulator.order" in {
     val orderBookSide = emptyOrderBookSide
 
     orderBookSide.addLimitOrder(trader, basicBuyOrder, 0)
@@ -96,7 +95,7 @@ class OrderBookSideSpec extends FlatSpec {
     assert(orderBookSide.getActiveOrders.isEmpty)
   }
 
-  "getBestPrice" should "display the best price with one order" in {
+  "getBestPrice" should "display the best price with one simulator.order" in {
     assert(singularOrderBookSide.getBestPrice.get == bestBuyPrice)
   }
 
@@ -120,20 +119,20 @@ class OrderBookSideSpec extends FlatSpec {
     assert(orderBookSide.getBestPrice.get == bestPrice)
   }
 
-  "cancelOrder" should "remove only active order when given a correct id" in {
+  "cancelOrder" should "remove only active simulator.order when given a correct id" in {
     val orderBookSide = singularOrderBookSide
     orderBookSide.cancelOrder(0)
 
     assert(orderBookSide.getActiveOrders.toList.isEmpty)
   }
 
-  it should "return an order from active orders when given a correct id" in {
+  it should "return an simulator.order from active orders when given a correct id" in {
     val orderBookSide = singularOrderBookSide
 
     assert(orderBookSide.cancelOrder(0).isDefined)
   }
 
-  it should "return a partially filled order from active orders when given a correct id" in {
+  it should "return a partially filled simulator.order from active orders when given a correct id" in {
     // TODO: this, requires generating orders of the other type
     true
   }

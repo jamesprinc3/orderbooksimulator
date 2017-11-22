@@ -1,6 +1,6 @@
-package orderbook
+package simulator.orderbook
 
-import order.{Order, OrderType}
+import simulator.order.{Order, OrderType}
 
 object TestOrderBook {
   def askSide = new OrderBookSide(OrderBookSideType.Ask)

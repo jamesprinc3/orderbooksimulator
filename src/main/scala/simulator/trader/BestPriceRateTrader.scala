@@ -1,11 +1,11 @@
-package trader
+package simulator.trader
 
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-import order.{Order, OrderType}
+import simulator.order.{Order, OrderType}
 
-// A trader which just matches the best price (and therefore adds depth at the edge of the book).
+// A simulator.trader which just matches the best price (and therefore adds depth at the edge of the book).
 class BestPriceRateTrader(orderType: OrderType.Value,
                           rate: Int,
                           private var time: LocalDateTime,

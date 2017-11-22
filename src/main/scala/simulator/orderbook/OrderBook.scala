@@ -1,7 +1,7 @@
-package orderbook
+package simulator.orderbook
 
-import order.{Order, OrderType}
-import trader.Trader
+import simulator.order.{Order, OrderType}
+import simulator.trader.Trader
 
 // TODO: poke a hole in this class to allow access to ask/bid sides?
 class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {

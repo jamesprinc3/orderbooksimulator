@@ -1,4 +1,4 @@
-package trader
+package simulator.trader
 
 class TestTraderParams {
 

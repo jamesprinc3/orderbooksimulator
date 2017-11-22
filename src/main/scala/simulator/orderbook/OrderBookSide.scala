@@ -1,9 +1,9 @@
-package orderbook
+package simulator.orderbook
 
 import java.time.LocalDateTime
 
-import order.{Order, OrderType, Trade}
-import trader.Trader
+import simulator.order.{Order, OrderType, Trade}
+import simulator.trader.Trader
 
 import scala.collection.mutable
 
@@ -13,7 +13,7 @@ object OrderBookSideType extends Enumeration {
 
 class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEntry] = List()) {
 
-  // TODO: match on order book type?
+  // TODO: match on simulator.order book type?
   implicit val ordering: Ordering[OrderBookEntry] = (x: OrderBookEntry, y: OrderBookEntry) => {
     var res = 0
 
@@ -49,17 +49,17 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
   }
 
   // TODO: Error handling
-  // TODO: is adding an order with the same ID as an existing order a fail?
-  // TODO: split the order handling off into a different class?
+  // TODO: is adding an simulator.order with the same ID as an existing simulator.order a fail?
+  // TODO: split the simulator.order handling off into a different class?
   def addLimitOrder(trader: Trader, order: Order, id: Int): Unit = {
-    // Need to check that if we're Bid side then we're getting a buy order here
+    // Need to check that if we're Bid side then we're getting a buy simulator.order here
     sideType match {
       case OrderBookSideType.Bid => if (order.orderType == OrderType.Sell) {
-        println("Expected order type Buy, but was Sell")
+        println("Expected simulator.order type Buy, but was Sell")
         return
       }
       case OrderBookSideType.Ask => if (order.orderType == OrderType.Buy) {
-        println("Expected order type Sell, but was Buy")
+        println("Expected simulator.order type Sell, but was Buy")
         return
       }
     }
@@ -73,20 +73,20 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
   // TODO: Do market orders just have a size, rather than a price?
   // TODO: This function is fairly mucky, use generics instead
   /**
-    * @param order The order which we want to match on the market
-    * @return None if the order was matched in its entirety.
-    *         Some(order) if we were unable to match the order fully, in this situation the order book can
-    *         choose whether to re-enter this as a limit order.
+    * @param order The simulator.order which we want to match on the market
+    * @return None if the simulator.order was matched in its entirety.
+    *         Some(simulator.order) if we were unable to match the simulator.order fully, in this situation the simulator.order book can
+    *         choose whether to re-enter this as a limit simulator.order.
     */
   def addMarketOrder(trader: Trader, order: Order): Option[Order] = {
-    // Bid side will accept a sell order here
+    // Bid side will accept a sell simulator.order here
     sideType match {
       case OrderBookSideType.Bid => if (order.orderType == OrderType.Buy) {
-        println("Expected order type Sell, but was Buy")
+        println("Expected simulator.order type Sell, but was Buy")
         return Some(order)
       }
       case OrderBookSideType.Ask => if (order.orderType == OrderType.Sell) {
-        println("Expected order type Buy, but was Sell")
+        println("Expected simulator.order type Buy, but was Sell")
         return Some(order)
       }
     }
@@ -105,13 +105,13 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
       }
 
       if (remainingSize > 0) {
-        // Enter this partially matched order as a limit order (on the other side of the book!)
+        // Enter this partially matched simulator.order as a limit simulator.order (on the other side of the book!)
         val partialIncomingOrder = order.copy(size = remainingSize)
         return Some(partialIncomingOrder)
       }
 
       if (remainingSize < 0) {
-        // Put this partially matched order back in our active orders as a limit order
+        // Put this partially matched simulator.order back in our active orders as a limit simulator.order
         val partialActiveOrder = activeOrder.copy(size = -1*remainingSize)
         activeOrders.+=(partialActiveOrder)
       }
@@ -153,6 +153,6 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     Some(firstOrder.price)
   }
 
-  // TODO: calculate some metrics (as outlined in the Gould paper for this side of the order book here, or maybe that should be moved out to another class? e.g. OrderBookMetrics
+  // TODO: calculate some metrics (as outlined in the Gould paper for this side of the simulator.order book here, or maybe that should be moved out to another class? e.g. OrderBookMetrics
 
 }

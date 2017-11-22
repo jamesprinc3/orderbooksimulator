@@ -1,6 +1,6 @@
-package trader
+package simulator.trader
 
-import order.OrderType
+import simulator.order.OrderType
 
 // A Trader which submits orders at a given rate
 // TODO: virtual clock?
