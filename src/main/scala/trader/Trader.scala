@@ -1,9 +1,11 @@
 package trader
 
+import java.time.LocalDateTime
+
 import order.Trade
 
 // TODO: trader factory?
-class Trader(traderParams: TraderParams) {
+abstract class Trader(traderParams: TraderParams) {
 
   val id: Int = traderParams.id
   private var balance = traderParams.balance
@@ -20,4 +22,7 @@ class Trader(traderParams: TraderParams) {
       stock -= trade.size
     }
   }
+
+  // This way we can vary the size between steps, for optimisng TWAP stuff perhaps?
+  def step(newTime: LocalDateTime)
 }

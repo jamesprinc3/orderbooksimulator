@@ -29,39 +29,39 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
     _orderId
   }
 
-  def submitOrder(order: Order): Int = {
+  def submitOrder(trader: Trader, order: Order): Int = {
     order.orderType match {
       case OrderType.Buy => {
-        submitBuyOrder(order)
+        submitBuyOrder(trader, order)
       }
       case OrderType.Sell => {
-        submitSellOrder(order)
+        submitSellOrder(trader, order)
       }
       case _ =>
         -1
     }
   }
 
-  private def submitBuyOrder(order: Order): Int = {
+  private def submitBuyOrder(trader: Trader, order: Order): Int = {
     val askPrice = askSide.getBestPrice
     val orderId = getOrderID
 
     if (askPrice.isEmpty || order.price < askPrice.get) {
-      bidSide.addLimitOrder(order, orderId)
+      bidSide.addLimitOrder(trader, order, orderId)
     } else {
-      askSide.addMarketOrder(order)
+      askSide.addMarketOrder(trader, order)
     }
     orderId
   }
 
-  private def submitSellOrder(order: Order): Int = {
+  private def submitSellOrder(trader: Trader, order: Order): Int = {
     val bidPrice = askSide.getBestPrice
     val orderId = getOrderID
 
     if (bidPrice.isEmpty || order.price > bidPrice.get) {
-      askSide.addLimitOrder(order, orderId)
+      askSide.addLimitOrder(trader, order, orderId)
     } else {
-      bidSide.addMarketOrder(order)
+      bidSide.addMarketOrder(trader, order)
     }
     orderId
   }

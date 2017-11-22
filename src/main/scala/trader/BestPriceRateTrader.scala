@@ -24,7 +24,7 @@ class BestPriceRateTrader(orderType: OrderType.Value,
     }
 
     Range(0, tradesNeeded).foreach(_ => {
-      orderBook.submitOrder(Order(orderType, price, size))
+      orderBook.submitOrder(this, Order(orderType, price, size))
     })
 
     time = newTime

@@ -125,7 +125,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     val trade = sideType match {
       case OrderBookSideType.Bid =>
         Trade(taker.id, maker.id, activeOrder.price, activeOrder.size)
-      case OrderType.Sell =>
+      case OrderBookSideType.Ask =>
         Trade(maker.id, taker.id, activeOrder.price, activeOrder.size)
     }
     // TODO: submit the trade to some kind of transaction log
