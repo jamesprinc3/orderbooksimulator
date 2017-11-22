@@ -49,8 +49,8 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
   }
 
   // TODO: Error handling
-  // TODO: is adding an simulator.order with the same ID as an existing simulator.order a fail?
-  // TODO: split the simulator.order handling off into a different class?
+  // TODO: is adding an order with the same ID as an existing order a fail?
+  // TODO: split the order handling off into a different class?
   def addLimitOrder(trader: Trader, order: Order, id: Int): Unit = {
     // Need to check that if we're Bid side then we're getting a buy simulator.order here
     sideType match {
@@ -71,11 +71,11 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
 
   // TODO: Error handling
   // TODO: Do market orders just have a size, rather than a price?
-  // TODO: This function is fairly mucky, use generics instead
+  // TODO: Add an ID in here too? I think it makes sense to have that in the transaction log!
   /**
-    * @param order The simulator.order which we want to match on the market
-    * @return None if the simulator.order was matched in its entirety.
-    *         Some(simulator.order) if we were unable to match the simulator.order fully, in this situation the simulator.order book can
+    * @param order The sorder which we want to match on the market
+    * @return None if the order was matched in its entirety.
+    *         Some(order) if we were unable to match the simulator.order fully, in this situation the simulator.order book can
     *         choose whether to re-enter this as a limit simulator.order.
     */
   def addMarketOrder(trader: Trader, order: Order): Option[Order] = {
@@ -105,13 +105,13 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
       }
 
       if (remainingSize > 0) {
-        // Enter this partially matched simulator.order as a limit simulator.order (on the other side of the book!)
+        // Enter this partially matched order as a limit simulator.order (on the other side of the book!)
         val partialIncomingOrder = order.copy(size = remainingSize)
         return Some(partialIncomingOrder)
       }
 
       if (remainingSize < 0) {
-        // Put this partially matched simulator.order back in our active orders as a limit simulator.order
+        // Put this partially matched order back in our active orders as a limit order
         val partialActiveOrder = activeOrder.copy(size = -1*remainingSize)
         activeOrders.+=(partialActiveOrder)
       }
@@ -120,7 +120,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     Some(order)
   }
 
-  protected[orderbook] def reconcile(maker: Trader, activeOrder: OrderBookEntry) = {
+  protected[orderbook] def reconcile(maker: Trader, activeOrder: OrderBookEntry): Unit = {
     val taker = activeOrder.trader
     val trade = sideType match {
       case OrderBookSideType.Bid =>

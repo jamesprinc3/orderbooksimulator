@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import simulator.order.OrderType
 import simulator.orderbook.{OrderBook, OrderBookSide, OrderBookSideType, TestOrderBook}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec}
+import simulator.TestConstants
 
 class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
 
@@ -23,7 +24,7 @@ class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
 
   // TODO: the tests in this class feel a bit flimsy, we're assuming the simulator.order IDs :/
 
-  it should "set the time to one second in the future" in {
+  "step" should "set the time to one second in the future" in {
     val newTime = LocalDateTime.of(2014, 2, 17, 9, 0, 1)
 
     trader.step(newTime)
@@ -36,7 +37,7 @@ class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
 
     trader.step(newTime)
 
-    assert(orderBook.getOrder(1).isDefined)
+    assert(orderBook.getOrder(TestConstants.minOrderIndex).isDefined)
   }
 
   it should "submit three orders after three seconds have elapsed" in {
@@ -44,9 +45,9 @@ class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
 
     trader.step(newTime)
 
-    assert(orderBook.getOrder(1).isDefined)
-    assert(orderBook.getOrder(2).isDefined)
-    assert(orderBook.getOrder(3).isDefined)
+    assert(orderBook.getOrder(TestConstants.minOrderIndex).isDefined)
+    assert(orderBook.getOrder(TestConstants.minOrderIndex + 1).isDefined)
+    assert(orderBook.getOrder(TestConstants.minOrderIndex + 2).isDefined)
   }
 
   it should "submit no orders if less than 1 seconds have elapsed" in {
@@ -63,8 +64,8 @@ class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
 
     trader.step(newTime)
 
-    assert(orderBook.getOrder(1).isDefined)
-    assert(orderBook.getOrder(2).isDefined)
-    assert(orderBook.getOrder(3).isEmpty)
+    assert(orderBook.getOrder(TestConstants.minOrderIndex).isDefined)
+    assert(orderBook.getOrder(TestConstants.minOrderIndex + 1).isDefined)
+    assert(orderBook.getOrder(TestConstants.minOrderIndex + 2).isEmpty)
   }
 }

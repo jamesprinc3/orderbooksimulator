@@ -2,6 +2,7 @@ package simulator.orderbook
 
 import java.time.LocalDateTime
 
+import simulator.TestConstants
 import simulator.order.Order
 
 object OrderBookSideHelper {
@@ -19,7 +20,7 @@ object OrderBookSideHelper {
   private def getOrderBookEntries(orders: List[Order]) = {
     orders.indices.map(x => {
       val order = orders(x)
-      OrderBookEntry(null, x, LocalDateTime.now(), order.price, order.size)
+      OrderBookEntry(null, TestConstants.minOrderIndex + x, LocalDateTime.now(), order.price, order.size)
     }).toList
   }
 }

@@ -11,7 +11,7 @@ object TestOrderBook {
     val buys = orders.filter(order => order.orderType == OrderType.Buy)
     val sells = orders.filter(order => order.orderType == OrderType.Sell)
 
-    val newBuySide = OrderBookSideHelper.getAskSide(buys)
+    val newBuySide = OrderBookSideHelper.getBidSide(buys)
     val newAskSide = OrderBookSideHelper.getAskSide(sells)
 
     new OrderBook(newAskSide, newBuySide)

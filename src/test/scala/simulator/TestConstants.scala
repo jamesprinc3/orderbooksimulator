@@ -2,5 +2,5 @@ package simulator
 
 object TestConstants {
 
-  val minOrderIndex = 0
+  val minOrderIndex = 1
 }
