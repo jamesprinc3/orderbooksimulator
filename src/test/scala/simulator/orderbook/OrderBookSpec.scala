@@ -7,6 +7,15 @@ import simulator.TestConstants
 class OrderBookSpec extends FlatSpec {
 
   // TODO: make this into some kind of system constant
+  "initialization" should "populate OrderBookSides with the correct orders" in {
+    val orderBook = TestOrderBook.getEmptyOrderBook
+    val newPrice = orderBook.getBidPrice + 1
+
+    val order = Order(OrderType.Buy, newPrice, 10)
+    orderBook.submitOrder(null, order)
+
+    assert(orderBook.getBidPrice == newPrice)
+  }
 
 
   "submitOrder" should "submit a buy simulator.order" in {

@@ -2,9 +2,9 @@ package simulator.orderbook
 
 import simulator.order.{Order, OrderType, Trade}
 
-class OrderBookFactory {
+object OrderBookFactory {
 
-  def getOrderBook(orders: List[Order] = List()) = {
+  def getOrderBook(orders: List[Order] = List()): OrderBook = {
 
     val askSide = new OrderBookSide(OrderBookSideType.Ask)
     val bidSide = new OrderBookSide(OrderBookSideType.Bid)

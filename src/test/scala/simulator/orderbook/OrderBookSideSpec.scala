@@ -40,7 +40,7 @@ class OrderBookSideSpec extends FlatSpec {
   it should "assign correct priority due to price (two orders)" in {
     val orderBookSide = emptyOrderBookSide
 
-    val higherPricedOrder = Order(OrderType.Buy, bestBuyPrice-1, 10)
+    val higherPricedOrder = Order(OrderType.Buy, bestBuyPrice+1, 10)
     orderBookSide.addLimitOrder(trader, higherPricedOrder, TestConstants.minOrderIndex)
     orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex + 1)
 

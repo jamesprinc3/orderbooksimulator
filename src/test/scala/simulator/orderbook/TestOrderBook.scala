@@ -8,12 +8,12 @@ object TestOrderBook {
   def getEmptyOrderBook = new OrderBook(askSide, bidSide)
 
   def getOrderBook(orders: List[Order]) = {
-    val buys = orders.filter(order => order.orderType == OrderType.Buy)
-    val sells = orders.filter(order => order.orderType == OrderType.Sell)
+//    val buys = orders.filter(order => order.orderType == OrderType.Buy)
+//    val sells = orders.filter(order => order.orderType == OrderType.Sell)
+//
+//    val newBuySide = OrderBookSideHelper.getBidSide(buys)
+//    val newAskSide = OrderBookSideHelper.getAskSide(sells)
 
-    val newBuySide = OrderBookSideHelper.getBidSide(buys)
-    val newAskSide = OrderBookSideHelper.getAskSide(sells)
-
-    new OrderBook(newAskSide, newBuySide)
+    new OrderBook(askSide, bidSide, orders)
   }
 }
