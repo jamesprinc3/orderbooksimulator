@@ -1,6 +1,7 @@
 package simulator.orderbook
 
-import simulator.order.{Order, OrderType}
+import simulator.TradeLog
+import simulator.order.{Order, OrderType, Trade}
 import simulator.trader.Trader
 
 // TODO: poke a hole in this class to allow access to ask/bid sides?
@@ -9,6 +10,7 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
   private var _orderId = 0
   private val _tickSize = 1
   private val _lotSize = 1
+  val tradeLog = new TradeLog()
   // TODO: add minPrice / maxPrice?
   // Negative prices dont make sense anyway, so should probably put this in
 
@@ -30,6 +32,7 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
   }
 
   def submitOrder(trader: Trader, order: Order): Int = {
+    println("order submitted")
     order.orderType match {
       case OrderType.Buy => {
         submitBuyOrder(trader, order)
@@ -49,7 +52,8 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
     if (askPrice.isEmpty || order.price < askPrice.get) {
       bidSide.addLimitOrder(trader, order, orderId)
     } else {
-      askSide.addMarketOrder(trader, order)
+      val (trades: Option[List[Trade]], _) = askSide.addMarketOrder(trader, order)
+      trades.get.foreach(tradeLog.addTrade)
     }
     orderId
   }
@@ -61,7 +65,8 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
     if (bidPrice.isEmpty || order.price > bidPrice.get) {
       askSide.addLimitOrder(trader, order, orderId)
     } else {
-      bidSide.addMarketOrder(trader, order)
+      val (trades: Option[List[Trade]], _) = bidSide.addMarketOrder(trader, order)
+      trades.get.foreach(tradeLog.addTrade)
     }
     orderId
   }

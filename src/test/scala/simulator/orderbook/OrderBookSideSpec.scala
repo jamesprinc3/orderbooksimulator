@@ -14,8 +14,8 @@ class OrderBookSideSpec extends FlatSpec {
   val traderParams = TraderParams(orderbook, 0, 10, 10)
   val trader = new TestTrader(traderParams)
 
-  val bestBuyPrice = 99
-  val bestSellPrice = 101
+  val bestBuyPrice = 101
+  val bestSellPrice = 99
   val standardOrderSize = 10
   val basicBuyOrder = Order(OrderType.Buy, bestBuyPrice, standardOrderSize)
   val basicSellOrder = Order(OrderType.Sell, bestSellPrice, standardOrderSize)
@@ -44,7 +44,7 @@ class OrderBookSideSpec extends FlatSpec {
     orderBookSide.addLimitOrder(trader, higherPricedOrder, TestConstants.minOrderIndex)
     orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex + 1)
 
-    assert(orderBookSide.getActiveOrders.head.orderId == 1)
+    assert(orderBookSide.getActiveOrders.head.orderId == TestConstants.minOrderIndex)
   }
 
   it should "assign correct priority due to arrival time (two orders)" in {
@@ -53,13 +53,13 @@ class OrderBookSideSpec extends FlatSpec {
     orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
     orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex+ 1)
 
-    assert(orderBookSide.getActiveOrders.head.orderId == 0)
+    assert(orderBookSide.getActiveOrders.head.orderId == TestConstants.minOrderIndex)
   }
 
   "addMarketOrder" should "not match in an empty book" in {
     val orderBookSide = emptyOrderBookSide
 
-    assert(orderBookSide.addMarketOrder(trader, basicSellOrder).isDefined)
+    assert(orderBookSide.addMarketOrder(trader, basicSellOrder)._2.isDefined)
   }
 
   it should "match exactly one simulator.order of same size" in {
@@ -67,7 +67,7 @@ class OrderBookSideSpec extends FlatSpec {
 
     orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
     val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize)
-    val ret = orderBookSide.addMarketOrder(trader, sellOrder)
+    val ret = orderBookSide.addMarketOrder(trader, sellOrder)._2
 
     assert(ret.isEmpty)
     assert(orderBookSide.getActiveOrders.isEmpty)
@@ -79,7 +79,7 @@ class OrderBookSideSpec extends FlatSpec {
 
     orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
     val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize-1)
-    val ret = orderBookSide.addMarketOrder(trader, sellOrder)
+    val ret = orderBookSide.addMarketOrder(trader, sellOrder)._2
 
     assert(ret.isEmpty)
     assert(orderBookSide.getActiveOrders.head.size == 1)
@@ -92,7 +92,7 @@ class OrderBookSideSpec extends FlatSpec {
     val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize+1)
     val ret = orderBookSide.addMarketOrder(trader, sellOrder)
 
-    assert(ret.get.size == 1)
+    assert(ret._2.get.size == 1)
     assert(orderBookSide.getActiveOrders.isEmpty)
   }
 

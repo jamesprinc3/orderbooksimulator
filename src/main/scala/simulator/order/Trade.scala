@@ -1,3 +1,6 @@
 package simulator.order
 
-case class Trade(buyerId: Int, sellerId: Int, price: Int, size: Int)
+import java.time.LocalDateTime
+
+// TODO: maybe add an exchange/orderbook id here too, if we want to have a global log of transactions
+case class Trade(time: LocalDateTime, buyerId: Int, buyedOrderId: Int, sellerId: Int, sellerOrderId: Int, price: Int, size: Int)

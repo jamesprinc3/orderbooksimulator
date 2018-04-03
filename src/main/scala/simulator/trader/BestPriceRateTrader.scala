@@ -16,16 +16,20 @@ class BestPriceRateTrader(orderType: OrderType.Value,
 
   override def step(newTime: LocalDateTime): Unit = {
     val tick = ChronoUnit.NANOS.between(time, newTime) / 1e9
-    val tradesNeeded: Int = math.floor(rate * tick).toInt
+//    val tradesNeeded: Int = math.floor(rate * tick).toInt
+//    println("TradesNeeded: " + tradesNeeded)
 
     val price = orderType match {
       case OrderType.Buy  => orderBook.getBidPrice
       case OrderType.Sell => orderBook.getAskPrice
     }
 
-    Range(0, tradesNeeded).foreach(_ => {
-      orderBook.submitOrder(this, Order(orderType, price, size))
-    })
+    println("Price: " + price)
+
+//    Range(0, tradesNeeded).foreach(_ => {
+    val orderId = orderBook.submitOrder(this, Order(orderType, price, size))
+    println (orderId)
+//    })
 
     time = newTime
   }

@@ -2,6 +2,7 @@ package simulator.orderbook
 
 import java.time.LocalDateTime
 
+import simulator.TradeLog
 import simulator.order.{Order, OrderType, Trade}
 import simulator.trader.Trader
 
@@ -73,65 +74,74 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
   // TODO: Do market orders just have a size, rather than a price?
   // TODO: Add an ID in here too? I think it makes sense to have that in the transaction log!
   /**
-    * @param order The sorder which we want to match on the market
+    * @param incomingOrder The order which we want to match on the market
     * @return None if the order was matched in its entirety.
     *         Some(order) if we were unable to match the simulator.order fully, in this situation the simulator.order book can
     *         choose whether to re-enter this as a limit simulator.order.
     */
-  def addMarketOrder(trader: Trader, order: Order): Option[Order] = {
+  def addMarketOrder(trader: Trader, incomingOrder: Order): (Option[List[Trade]], Option[Order]) = {
     // Bid side will accept a sell simulator.order here
     sideType match {
-      case OrderBookSideType.Bid => if (order.orderType == OrderType.Buy) {
+      case OrderBookSideType.Bid => if (incomingOrder.orderType == OrderType.Buy) {
         println("Expected simulator.order type Sell, but was Buy")
-        return Some(order)
+        return (None, Some(incomingOrder))
       }
-      case OrderBookSideType.Ask => if (order.orderType == OrderType.Sell) {
+      case OrderBookSideType.Ask => if (incomingOrder.orderType == OrderType.Sell) {
         println("Expected simulator.order type Buy, but was Sell")
-        return Some(order)
+        return (None, Some(incomingOrder))
       }
     }
 
-    val depthAtPrice = getDepth(order.price)
+    val depthAtPrice = getDepth(incomingOrder.price)
     if (depthAtPrice >= 0) {
-      var remainingSize = order.size
+      var remainingSize = incomingOrder.size
       val iter = activeOrders.iterator
-      var activeOrder: OrderBookEntry = null
+      var openOrder: OrderBookEntry = null
+      var tradesThatHappened: List[Trade] = List[Trade]()
       while (remainingSize > 0 && iter.hasNext) {
-        activeOrder = iter.next()
-        remainingSize -= activeOrder.size
-        activeOrders.remove(activeOrder)
+        openOrder = iter.next()
+        remainingSize -= openOrder.size
+        activeOrders.remove(openOrder)
 
-        reconcile(trader, activeOrder)
+        val trade = reconcile(trader, openOrder, incomingOrder)
+        tradesThatHappened = tradesThatHappened ++ List(trade)
+        // TODO: the above line is pretty ugly!
       }
 
       if (remainingSize > 0) {
         // Enter this partially matched order as a limit simulator.order (on the other side of the book!)
-        val partialIncomingOrder = order.copy(size = remainingSize)
-        return Some(partialIncomingOrder)
+        val partialIncomingOrder = incomingOrder.copy(size = remainingSize)
+        return (Some(tradesThatHappened), Some(partialIncomingOrder))
       }
 
       if (remainingSize < 0) {
         // Put this partially matched order back in our active orders as a limit order
-        val partialActiveOrder = activeOrder.copy(size = -1*remainingSize)
-        activeOrders.+=(partialActiveOrder)
+        val partialOpenOrder = openOrder.copy(size = -1*remainingSize)
+        activeOrders.+=(partialOpenOrder)
       }
-      return None
+      return (Some(tradesThatHappened), None)
     }
-    Some(order)
+    (None, Some(incomingOrder))
   }
 
-  protected[orderbook] def reconcile(maker: Trader, activeOrder: OrderBookEntry): Unit = {
-    val taker = activeOrder.trader
+  protected[orderbook] def reconcile(maker: Trader, openOrder: OrderBookEntry, incomingOrder: Order): Trade = {
+    val taker = openOrder.trader
     val trade = sideType match {
       case OrderBookSideType.Bid =>
-        Trade(taker.id, maker.id, activeOrder.price, activeOrder.size)
+        // TODO: LocalDateTime needs to change to something more meaningful
+        Trade(LocalDateTime.now(), taker.id, openOrder.orderId,
+            maker.id, openOrder.orderId, incomingOrder.price,
+            Math.min(incomingOrder.size, openOrder.size))
       case OrderBookSideType.Ask =>
-        Trade(maker.id, taker.id, activeOrder.price, activeOrder.size)
+        Trade(LocalDateTime.now(), maker.id, openOrder.orderId,
+          taker.id, openOrder.orderId,incomingOrder.price,
+          Math.min(incomingOrder.size, openOrder.size))
     }
     // TODO: submit the trade to some kind of transaction log
 
     maker.updateState(trade)
     taker.updateState(trade)
+    trade
   }
 
   private def getOrdersAtPrice(price: Int): Iterator[OrderBookEntry] = {
