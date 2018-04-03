@@ -5,7 +5,7 @@ import simulator.order.{Order, OrderType, Trade}
 import simulator.trader.Trader
 
 // TODO: poke a hole in this class to allow access to ask/bid sides?
-class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
+class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orders: List[Order] = List()) {
 
   private var _orderId = 0
   private val _tickSize = 1
@@ -52,7 +52,7 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
     if (askPrice.isEmpty || order.price < askPrice.get) {
       bidSide.addLimitOrder(trader, order, orderId)
     } else {
-      val (trades: Option[List[Trade]], _) = askSide.addMarketOrder(trader, order)
+      val (trades: Option[List[Trade]], _) = askSide.addMarketOrder(trader, order, orderId)
       trades.get.foreach(tradeLog.addTrade)
     }
     orderId
@@ -65,7 +65,7 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide) {
     if (bidPrice.isEmpty || order.price > bidPrice.get) {
       askSide.addLimitOrder(trader, order, orderId)
     } else {
-      val (trades: Option[List[Trade]], _) = bidSide.addMarketOrder(trader, order)
+      val (trades: Option[List[Trade]], _) = bidSide.addMarketOrder(trader, order, orderId)
       trades.get.foreach(tradeLog.addTrade)
     }
     orderId

@@ -18,7 +18,7 @@ class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
 
   override def beforeEach(): Unit = {
     orderBook = TestOrderBook.getEmptyOrderBook
-    traderParams = TraderParams(orderBook, 1, 10, 10)
+    traderParams = TraderParams(1, 10, 10)
     trader = new BestPriceRateTrader(OrderType.Buy, 1, startTime, traderParams)
   }
 

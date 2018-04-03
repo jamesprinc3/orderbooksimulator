@@ -21,7 +21,7 @@ class Simulator(startTime: LocalDateTime,
   def run(): Unit = {
     while (elapsedTimeSteps < timeSteps) {
       time.plusNanos(increment.toNanos)
-      traders.foreach(_.step(time))
+      traders.foreach(_.step(time, orderBooks))
       elapsedTimeSteps += 1
     }
   }

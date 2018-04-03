@@ -11,7 +11,7 @@ class OrderBookSideSpec extends FlatSpec {
   // TODO: sort this dependency mess out
   def emptyOrderBookSide: OrderBookSide = OrderBookSideHelper.getBidSide(List())
   val orderbook = TestOrderBook.getEmptyOrderBook
-  val traderParams = TraderParams(orderbook, 0, 10, 10)
+  val traderParams = TraderParams(0, 10, 10)
   val trader = new TestTrader(traderParams)
 
   val bestBuyPrice = 101
@@ -59,7 +59,7 @@ class OrderBookSideSpec extends FlatSpec {
   "addMarketOrder" should "not match in an empty book" in {
     val orderBookSide = emptyOrderBookSide
 
-    assert(orderBookSide.addMarketOrder(trader, basicSellOrder)._2.isDefined)
+    assert(orderBookSide.addMarketOrder(trader, basicSellOrder, 0)._2.isDefined)
   }
 
   it should "match exactly one simulator.order of same size" in {
@@ -67,7 +67,7 @@ class OrderBookSideSpec extends FlatSpec {
 
     orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
     val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize)
-    val ret = orderBookSide.addMarketOrder(trader, sellOrder)._2
+    val ret = orderBookSide.addMarketOrder(trader, sellOrder, 0)._2
 
     assert(ret.isEmpty)
     assert(orderBookSide.getActiveOrders.isEmpty)
@@ -79,7 +79,7 @@ class OrderBookSideSpec extends FlatSpec {
 
     orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
     val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize-1)
-    val ret = orderBookSide.addMarketOrder(trader, sellOrder)._2
+    val ret = orderBookSide.addMarketOrder(trader, sellOrder, 0)._2
 
     assert(ret.isEmpty)
     assert(orderBookSide.getActiveOrders.head.size == 1)
@@ -90,7 +90,7 @@ class OrderBookSideSpec extends FlatSpec {
 
     orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
     val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize+1)
-    val ret = orderBookSide.addMarketOrder(trader, sellOrder)
+    val ret = orderBookSide.addMarketOrder(trader, sellOrder, 0)
 
     assert(ret._2.get.size == 1)
     assert(orderBookSide.getActiveOrders.isEmpty)

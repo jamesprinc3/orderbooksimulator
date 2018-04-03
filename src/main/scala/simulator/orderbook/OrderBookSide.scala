@@ -79,7 +79,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     *         Some(order) if we were unable to match the simulator.order fully, in this situation the simulator.order book can
     *         choose whether to re-enter this as a limit simulator.order.
     */
-  def addMarketOrder(trader: Trader, incomingOrder: Order): (Option[List[Trade]], Option[Order]) = {
+  def addMarketOrder(trader: Trader, incomingOrder: Order, incomingOrderId:Int): (Option[List[Trade]], Option[Order]) = {
     // Bid side will accept a sell simulator.order here
     sideType match {
       case OrderBookSideType.Bid => if (incomingOrder.orderType == OrderType.Buy) {
@@ -103,7 +103,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
         remainingSize -= openOrder.size
         activeOrders.remove(openOrder)
 
-        val trade = reconcile(trader, openOrder, incomingOrder)
+        val trade = reconcile(trader, openOrder, incomingOrder, incomingOrderId)
         tradesThatHappened = tradesThatHappened ++ List(trade)
         // TODO: the above line is pretty ugly!
       }
@@ -124,16 +124,16 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     (None, Some(incomingOrder))
   }
 
-  protected[orderbook] def reconcile(maker: Trader, openOrder: OrderBookEntry, incomingOrder: Order): Trade = {
+  protected[orderbook] def reconcile(maker: Trader, openOrder: OrderBookEntry, incomingOrder: Order, incomingOrderId: Int): Trade = {
     val taker = openOrder.trader
     val trade = sideType match {
       case OrderBookSideType.Bid =>
         // TODO: LocalDateTime needs to change to something more meaningful
         Trade(LocalDateTime.now(), taker.id, openOrder.orderId,
-            maker.id, openOrder.orderId, incomingOrder.price,
+            maker.id, incomingOrderId, incomingOrder.price,
             Math.min(incomingOrder.size, openOrder.size))
       case OrderBookSideType.Ask =>
-        Trade(LocalDateTime.now(), maker.id, openOrder.orderId,
+        Trade(LocalDateTime.now(), maker.id, incomingOrderId,
           taker.id, openOrder.orderId,incomingOrder.price,
           Math.min(incomingOrder.size, openOrder.size))
     }
