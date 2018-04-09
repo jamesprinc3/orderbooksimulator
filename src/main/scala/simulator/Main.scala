@@ -47,6 +47,8 @@ object Main {
     println(orderBook.tradeLog.toString)
 
     println("Simulation finished")
+
+
   }
 
 //  def startSimulation(): Unit = {

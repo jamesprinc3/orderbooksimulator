@@ -2,11 +2,11 @@ package simulator.trader
 
 object TraderFactory {
 
-  /** The master trader is just an empty shell
+  /** The hands off trader is just an empty shell that does nothing
     *
     */
   def getHandsOffTrader: Trader = {
-    val params = new TraderParams(0, 10, 0)
+    val params = TraderParams(0, 10, 0)
     new HandsOffTrader(params)
   }
 

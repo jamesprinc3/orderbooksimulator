@@ -14,4 +14,12 @@ object OrderBookFactory {
     orderBook
   }
 
+  // TODO: write this method
+  /**
+    * Returns an order book which has been populated with orders picked from a distribution
+    */
+  def getPopulatedOrderBook(): Unit = {
+
+  }
+
 }

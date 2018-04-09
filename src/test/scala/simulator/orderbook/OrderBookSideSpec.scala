@@ -10,7 +10,7 @@ class OrderBookSideSpec extends FlatSpec {
 
   // TODO: sort this dependency mess out
   def emptyOrderBookSide: OrderBookSide = OrderBookSideHelper.getBidSide(List())
-  val orderbook = TestOrderBook.getEmptyOrderBook
+  val orderbook: OrderBook = TestOrderBook.getEmptyOrderBook
   val traderParams = TraderParams(0, 10, 10)
   val trader = new TestTrader(traderParams)
 
