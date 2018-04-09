@@ -1,10 +1,12 @@
 package simulator.orderbook
 
 
+import java.time.LocalDateTime
+
 import simulator.order.{Order, OrderType}
 import org.scalatest._
 import simulator.TestConstants
-import simulator.trader.{TestTrader, TraderParams}
+import simulator.trader.{TestTrader, Trader, TraderParams}
 
 class OrderBookSideSpec extends FlatSpec {
 
@@ -17,14 +19,14 @@ class OrderBookSideSpec extends FlatSpec {
   val bestBuyPrice = 101
   val bestSellPrice = 99
   val standardOrderSize = 10
-  val basicBuyOrder = Order(OrderType.Buy, bestBuyPrice, standardOrderSize)
-  val basicSellOrder = Order(OrderType.Sell, bestSellPrice, standardOrderSize)
-  def singularOrderBookSide: OrderBookSide = OrderBookSideHelper.getBidSide(List(basicBuyOrder))
+  val basicBuyOrder = OrderBookEntry(OrderType.Buy, trader, TestConstants.minOrderIndex, LocalDateTime.now(), bestBuyPrice, standardOrderSize)
+  val basicSellOrder = OrderBookEntry(OrderType.Sell, trader, TestConstants.minOrderIndex, LocalDateTime.now(), bestSellPrice, standardOrderSize)
+  def singularOrderBookSide: OrderBookSide = new OrderBookSide(OrderBookSideType.Bid, List(basicBuyOrder))
 
   "addLimitOrder" should "add limit simulator.order to activeOrders" in {
     val orderBookSide = emptyOrderBookSide
 
-    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
+    orderBookSide.addLimitOrder(basicBuyOrder)
 
     assert(orderBookSide.getActiveOrders.nonEmpty)
   }
@@ -32,7 +34,7 @@ class OrderBookSideSpec extends FlatSpec {
   it should "reject simulator.order of incorrect type simulator.order to activeOrders" in {
     val orderBookSide = emptyOrderBookSide
 
-    orderBookSide.addLimitOrder(trader, basicSellOrder, TestConstants.minOrderIndex)
+    orderBookSide.addLimitOrder(basicSellOrder)
 
     assert(orderBookSide.getActiveOrders.isEmpty)
   }
@@ -40,61 +42,63 @@ class OrderBookSideSpec extends FlatSpec {
   it should "assign correct priority due to price (two orders)" in {
     val orderBookSide = emptyOrderBookSide
 
-    val higherPricedOrder = Order(OrderType.Buy, bestBuyPrice+1, 10)
-    orderBookSide.addLimitOrder(trader, higherPricedOrder, TestConstants.minOrderIndex)
-    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex + 1)
+    val higherPricedOrder = OrderBookEntry(OrderType.Buy, trader, TestConstants.minOrderIndex+1, LocalDateTime.now(), bestBuyPrice+1, 10)
+    orderBookSide.addLimitOrder(basicBuyOrder)
+    orderBookSide.addLimitOrder(higherPricedOrder)
 
-    assert(orderBookSide.getActiveOrders.head.orderId == TestConstants.minOrderIndex)
+    assert(orderBookSide.getActiveOrders.last.orderId == TestConstants.minOrderIndex)
   }
 
   it should "assign correct priority due to arrival time (two orders)" in {
     val orderBookSide = emptyOrderBookSide
 
-    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
-    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex+ 1)
+    val orderWithLaterArrivalTime = OrderBookEntry(OrderType.Buy, trader, TestConstants.minOrderIndex+1, LocalDateTime.now(), bestBuyPrice+1, 10)
+    orderBookSide.addLimitOrder(basicBuyOrder)
+    orderBookSide.addLimitOrder(orderWithLaterArrivalTime)
 
-    assert(orderBookSide.getActiveOrders.head.orderId == TestConstants.minOrderIndex)
+    assert(orderBookSide.getActiveOrders.last.orderId == TestConstants.minOrderIndex)
   }
 
-  "addMarketOrder" should "not match in an empty book" in {
-    val orderBookSide = emptyOrderBookSide
-
-    assert(orderBookSide.addMarketOrder(trader, basicSellOrder, 0)._2.isDefined)
-  }
-
-  it should "match exactly one simulator.order of same size" in {
-    val orderBookSide = emptyOrderBookSide
-
-    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
-    val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize)
-    val ret = orderBookSide.addMarketOrder(trader, sellOrder, 0)._2
-
-    assert(ret.isEmpty)
-    assert(orderBookSide.getActiveOrders.isEmpty)
-  }
-
-  // TODO: should use 2 different traders here, really
-  it should "partially match exactly one active simulator.order of same size" in {
-    val orderBookSide = emptyOrderBookSide
-
-    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
-    val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize-1)
-    val ret = orderBookSide.addMarketOrder(trader, sellOrder, 0)._2
-
-    assert(ret.isEmpty)
-    assert(orderBookSide.getActiveOrders.head.size == 1)
-  }
-
-  it should "partially match exactly one incoming simulator.order" in {
-    val orderBookSide = emptyOrderBookSide
-
-    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
-    val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize+1)
-    val ret = orderBookSide.addMarketOrder(trader, sellOrder, 0)
-
-    assert(ret._2.get.size == 1)
-    assert(orderBookSide.getActiveOrders.isEmpty)
-  }
+  // TODO: figure out whether below tests are needed
+//  "addMarketOrder" should "not match in an empty book" in {
+//    val orderBookSide = emptyOrderBookSide
+//
+//    assert(orderBookSide.addMarketOrder(trader, basicSellOrder, 0)._2.isDefined)
+//  }
+//
+//  it should "match exactly one simulator.order of same size" in {
+//    val orderBookSide = emptyOrderBookSide
+//
+//    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
+//    val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize)
+//    val ret = orderBookSide.addMarketOrder(trader, sellOrder, 0)._2
+//
+//    assert(ret.isEmpty)
+//    assert(orderBookSide.getActiveOrders.isEmpty)
+//  }
+//
+//  // TODO: should use 2 different traders here, really
+//  it should "partially match exactly one active simulator.order of same size" in {
+//    val orderBookSide = emptyOrderBookSide
+//
+//    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
+//    val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize-1)
+//    val ret = orderBookSide.addMarketOrder(trader, sellOrder, 0)._2
+//
+//    assert(ret.isEmpty)
+//    assert(orderBookSide.getActiveOrders.head.size == 1)
+//  }
+//
+//  it should "partially match exactly one incoming simulator.order" in {
+//    val orderBookSide = emptyOrderBookSide
+//
+//    orderBookSide.addLimitOrder(trader, basicBuyOrder, TestConstants.minOrderIndex)
+//    val sellOrder = Order(OrderType.Sell, bestBuyPrice, standardOrderSize+1)
+//    val ret = orderBookSide.addMarketOrder(trader, sellOrder, 0)
+//
+//    assert(ret._2.get.size == 1)
+//    assert(orderBookSide.getActiveOrders.isEmpty)
+//  }
 
   "getBestPrice" should "display the best price with one simulator.order" in {
     assert(singularOrderBookSide.getBestPrice.get == bestBuyPrice)
@@ -113,7 +117,7 @@ class OrderBookSideSpec extends FlatSpec {
   it should "display the best price with many orders of different prices" in {
     val bestPrice = 100
     val orders = Range(0,3).map(x => {
-      Order(OrderType.Buy, bestPrice-x, 10)
+      Order(OrderType.Buy, bestPrice+x, 10)
     }).toList
     val orderBookSide = OrderBookSideHelper.getBidSide(orders)
 

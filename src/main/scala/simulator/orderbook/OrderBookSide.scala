@@ -2,7 +2,6 @@ package simulator.orderbook
 
 import java.time.LocalDateTime
 
-import simulator.TradeLog
 import simulator.order.{Order, OrderType, Trade}
 import simulator.trader.Trader
 
@@ -22,23 +21,31 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     if (x.price == y.price) {
       if (x.arrivalTime.isBefore(y.arrivalTime)) {
         res = 1
-      } else {
+      } else if (y.arrivalTime.isBefore(x.arrivalTime)){
         res = -1
       }
     } else if (x.price > y.price) {
       res = 1
-    } else {
+    } else if (x.price < y.price) {
       res = -1
     }
+
+    println("res: " + res)
 
     // But if it's Bid side, just reverse the sign
     if (sideType == OrderBookSideType.Bid) {
       res *= -1
     }
 
-    if (x.orderId == y.orderId) {
-      res = 0
+    println("res: " + res)
+
+    if (x.orderId < y.orderId) {
+      res = 1
+    } else if (x.orderId > y.orderId) {
+      res = -1
     }
+
+    println("res: " + res)
 
     res
   }
@@ -52,7 +59,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
   // TODO: Error handling
   // TODO: is adding an order with the same ID as an existing order a fail?
   // TODO: split the order handling off into a different class?
-  def addLimitOrder(trader: Trader, order: Order, id: Int): Unit = {
+  def addLimitOrder(order: OrderBookEntry): Unit = {
     // Need to check that if we're Bid side then we're getting a buy simulator.order here
     sideType match {
       case OrderBookSideType.Bid => if (order.orderType == OrderType.Sell) {
@@ -65,9 +72,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
       }
     }
 
-    val orderBookEntry = OrderBookEntry(trader, id, LocalDateTime.now(), order.price, order.size)
-
-    activeOrders.+=(orderBookEntry)
+    activeOrders.+=(order)
   }
 
   // TODO: Error handling
@@ -79,7 +84,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     *         Some(order) if we were unable to match the simulator.order fully, in this situation the simulator.order book can
     *         choose whether to re-enter this as a limit simulator.order.
     */
-  def addMarketOrder(trader: Trader, incomingOrder: Order, incomingOrderId:Int): (Option[List[Trade]], Option[Order]) = {
+  def addMarketOrder(incomingOrder: OrderBookEntry): (Option[List[Trade]], Option[OrderBookEntry]) = {
     // Bid side will accept a sell simulator.order here
     sideType match {
       case OrderBookSideType.Bid => if (incomingOrder.orderType == OrderType.Buy) {
@@ -103,7 +108,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
         remainingSize -= openOrder.size
         activeOrders.remove(openOrder)
 
-        val trade = reconcile(trader, openOrder, incomingOrder, incomingOrderId)
+        val trade = reconcile(openOrder, incomingOrder)
         tradesThatHappened = tradesThatHappened ++ List(trade)
         // TODO: the above line is pretty ugly!
       }
@@ -124,16 +129,17 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     (None, Some(incomingOrder))
   }
 
-  protected[orderbook] def reconcile(maker: Trader, openOrder: OrderBookEntry, incomingOrder: Order, incomingOrderId: Int): Trade = {
+  protected[orderbook] def reconcile(openOrder: OrderBookEntry, incomingOrder: OrderBookEntry): Trade = {
     val taker = openOrder.trader
+    val maker = incomingOrder.trader
     val trade = sideType match {
       case OrderBookSideType.Bid =>
         // TODO: LocalDateTime needs to change to something more meaningful
-        Trade(LocalDateTime.now(), taker.id, openOrder.orderId,
-            maker.id, incomingOrderId, incomingOrder.price,
+        Trade(incomingOrder.arrivalTime, taker.id, openOrder.orderId,
+            maker.id, incomingOrder.orderId, incomingOrder.price,
             Math.min(incomingOrder.size, openOrder.size))
       case OrderBookSideType.Ask =>
-        Trade(LocalDateTime.now(), maker.id, incomingOrderId,
+        Trade(incomingOrder.arrivalTime, maker.id, incomingOrder.orderId,
           taker.id, openOrder.orderId,incomingOrder.price,
           Math.min(incomingOrder.size, openOrder.size))
     }
@@ -159,8 +165,19 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
   }
 
   def getBestPrice: Option[Int] = {
-    val firstOrder = activeOrders.headOption.getOrElse(return None)
-    Some(firstOrder.price)
+    val bestOrder = sideType match {
+      case OrderBookSideType.Bid =>
+        activeOrders.lastOption
+      case OrderBookSideType.Ask =>
+        activeOrders.headOption
+    }
+
+    if (bestOrder.isEmpty) {
+      println("Return None")
+      return None
+    } else {
+      return Some(bestOrder.get.price)
+    }
   }
 
   // TODO: calculate some metrics (as outlined in the Gould paper for this side of the simulator.order book here, or maybe that should be moved out to another class? e.g. OrderBookMetrics

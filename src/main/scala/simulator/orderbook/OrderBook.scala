@@ -1,25 +1,28 @@
 package simulator.orderbook
 
-import simulator.TradeLog
+import java.time.LocalDateTime
+
+import simulator.TransactionLog
 import simulator.order.{Order, OrderType, Trade}
 import simulator.trader.Trader
 import simulator.trader.TraderFactory
 
 // TODO: poke a hole in this class to allow access to ask/bid sides?
-class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orders: List[Order] = List()) {
-
-  private val handsOffTrader = TraderFactory.getHandsOffTrader
-  orders.foreach(submitOrder(handsOffTrader, _))
+class OrderBook(askSide: OrderBookSide,
+                bidSide: OrderBookSide,
+                orders: List[Order] = List(),
+                val transactionLog: TransactionLog = new TransactionLog()) {
 
   private var _orderId = 0
   private val _tickSize = 1
   private val _lotSize = 1
-  val tradeLog = new TradeLog()
+  // TODO: see if we can set this to some kind of default start time
+  private var virtualTime: LocalDateTime = LocalDateTime.now()
   // TODO: add minPrice / maxPrice?
   // Negative prices dont make sense anyway, so should probably put this in
 
-  //TODO: transaction record
-  // It would be nice to see what has gone on.
+  private val handsOffTrader = TraderFactory.getHandsOffTrader
+  orders.foreach(submitOrder(handsOffTrader, _))
 
   def getBidPrice: Int = {
     bidSide.getBestPrice.getOrElse(return 0)
@@ -35,42 +38,40 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orders: List[Ord
     _orderId
   }
 
-  def submitOrder(trader: Trader, order: Order): Int = {
+  // TODO: use proper logging instead of println
+  // TODO: make OrderBookEntry in here
+  def submitOrder(trader: Trader, order: Order): Unit = {
     println("order submitted")
+    val orderBookEntry = OrderBookEntry(order.orderType, trader, getOrderID, virtualTime, order.price, order.size)
+    transactionLog.addOrder(orderBookEntry)
     order.orderType match {
       case OrderType.Buy =>
-        submitBuyOrder(trader, order)
+        submitBuyOrder(orderBookEntry)
       case OrderType.Sell =>
-        submitSellOrder(trader, order)
-      case _ =>
-        -1
+        submitSellOrder(orderBookEntry)
     }
   }
 
-  private def submitBuyOrder(trader: Trader, order: Order): Int = {
-    val askPrice = askSide.getBestPrice
-    val orderId = getOrderID
+  private def submitBuyOrder(order: OrderBookEntry): Unit = {
+    val askPrice = askSide.getBestPrice.getOrElse(0)
 
-    if (askPrice.isEmpty || order.price > askPrice.get) {
-      bidSide.addLimitOrder(trader, order, orderId)
+    if (order.price > askPrice) {
+      bidSide.addLimitOrder(order)
     } else {
-      val (trades: Option[List[Trade]], _) = askSide.addMarketOrder(trader, order, orderId)
-      trades.get.foreach(tradeLog.addTrade)
+      val (trades: Option[List[Trade]], _) = askSide.addMarketOrder(order)
+      trades.get.foreach(transactionLog.addTrade)
     }
-    orderId
   }
 
-  private def submitSellOrder(trader: Trader, order: Order): Int = {
+  private def submitSellOrder(order: OrderBookEntry): Unit = {
     val bidPrice = bidSide.getBestPrice
-    val orderId = getOrderID
 
     if (bidPrice.isEmpty || order.price < bidPrice.get) {
-      askSide.addLimitOrder(trader, order, orderId)
+      askSide.addLimitOrder(order)
     } else {
-      val (trades: Option[List[Trade]], _) = bidSide.addMarketOrder(trader, order, orderId)
-      trades.get.foreach(tradeLog.addTrade)
+      val (trades: Option[List[Trade]], _) = bidSide.addMarketOrder(order)
+      trades.get.foreach(transactionLog.addTrade)
     }
-    orderId
   }
 
   def getOrder(orderId: Int): Option[OrderBookEntry] = {
@@ -87,5 +88,8 @@ class OrderBook(askSide: OrderBookSide, bidSide: OrderBookSide, orders: List[Ord
     askSide.getActiveOrders.size + bidSide.getActiveOrders.size
   }
 
+  def step(newTime: LocalDateTime): Unit = {
+    virtualTime = newTime
+  }
 
 }

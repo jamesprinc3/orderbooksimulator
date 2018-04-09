@@ -32,7 +32,7 @@ class OrderBookFactorySpec extends FlatSpec {
     assert(orderBook.getNumberOfOrders == 1)
   }
 
-  it should "give correct number of orders in OrderBook when given mutilple buy orders" in {
+  it should "give correct number of orders in OrderBook when given multiple buy orders" in {
     val orderBook = OrderBookFactory.getOrderBook(buyOrders)
 
     assert(orderBook.getNumberOfOrders == 5)

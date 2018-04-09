@@ -21,6 +21,9 @@ class Simulator(startTime: LocalDateTime,
   def run(): Unit = {
     while (elapsedTimeSteps < timeSteps) {
       time.plusNanos(increment.toNanos)
+      // Update the time that each transaction log sees (note, this should have nop side effects)
+      orderBooks.foreach(_.step(time))
+      // Update the time that each trader sees
       traders.foreach(_.step(time, orderBooks))
       elapsedTimeSteps += 1
     }

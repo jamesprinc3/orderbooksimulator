@@ -20,7 +20,7 @@ object OrderBookSideHelper {
   private def getOrderBookEntries(orders: List[Order]) = {
     orders.indices.map(x => {
       val order = orders(x)
-      OrderBookEntry(null, TestConstants.minOrderIndex + x, LocalDateTime.now(), order.price, order.size)
+      OrderBookEntry(order.orderType, null, TestConstants.minOrderIndex + x, LocalDateTime.now(), order.price, order.size)
     }).toList
   }
 }

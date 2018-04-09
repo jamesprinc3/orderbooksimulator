@@ -32,7 +32,7 @@ class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
     assert(trader.getTime == newTime)
   }
 
-  it should "submit an simulator.order after one second elapsed" in {
+  it should "submit a simulator.order after one second elapsed" in {
     val newTime = LocalDateTime.of(2014, 2, 17, 9, 0, 1)
 
     trader.step(newTime)
