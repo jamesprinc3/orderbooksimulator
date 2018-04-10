@@ -2,6 +2,7 @@ package simulator.simulators
 
 import java.time.{LocalDateTime, ZoneOffset}
 
+import simulator.TransactionLog
 import simulator.order.Order
 import simulator.orderbook.OrderBook
 import simulator.trader.Trader
@@ -51,6 +52,10 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
 
   def getQueue(): PriorityQueue[(LocalDateTime, Trader, OrderBook, Order)] = {
     eventQueue
+  }
+
+  def getTransactionLogs(): List[TransactionLog] = {
+    orderBooks.map(_.transactionLog)
   }
 
 }
