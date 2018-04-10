@@ -13,7 +13,8 @@ class TimeSliceSimulator(startTime: LocalDateTime,
                          private val increment: Duration,
                          private val timeSteps: Int,
                          traders: List[Trader],
-                         orderBooks: List[OrderBook]) extends Simulator {
+                         orderBooks: List[OrderBook])
+    extends Simulator(traders, orderBooks) {
 
   private var elapsedTimeSteps = 0
   private var time = startTime

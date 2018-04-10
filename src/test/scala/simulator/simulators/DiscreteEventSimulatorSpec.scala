@@ -58,7 +58,7 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
 
     simulator.run()
 
-    assert(simulator.getTransactionLogs().head.orders.nonEmpty)
+    assert(simulator.getTransactionLogs.head.orders.nonEmpty)
   }
 
   it should "execute some trades inside a simulation" in {
@@ -68,7 +68,7 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
 
     simulator.run()
 
-    assert(simulator.getTransactionLogs().head.trades.nonEmpty)
+    assert(simulator.getTransactionLogs.head.trades.nonEmpty)
   }
 
 }
