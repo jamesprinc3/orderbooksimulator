@@ -21,11 +21,11 @@ class BestPriceRateTrader(orderType: OrderType.Value,
 
     orderBooks.foreach(orderBook => {
       val price = orderType match {
-        case OrderType.Buy  => orderBook.getBidPrice
-        case OrderType.Sell => orderBook.getAskPrice
+        case OrderType.Buy  => orderBook.getAskPrice
+        case OrderType.Sell => orderBook.getBidPrice
       }
 
-      val orderId = orderBook.submitOrder(this, Order(orderType, price, size))
+      orderBook.submitOrder(this, Order(orderType, price, size))
     })
     time = newTime
   }

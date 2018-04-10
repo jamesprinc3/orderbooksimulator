@@ -1,6 +1,7 @@
 package simulator.orderbook
 
-import simulator.order.{Order, OrderType, Trade}
+import simulator.order.{Order, OrderType}
+import breeze.stats.distributions._
 
 object OrderBookFactory {
 
@@ -18,8 +19,19 @@ object OrderBookFactory {
   /**
     * Returns an order book which has been populated with orders picked from a distribution
     */
-  def getPopulatedOrderBook(): Unit = {
+  def getPopulatedOrderBook(n: Int): OrderBook = {
+    val buySidePrice = new Gaussian(10000, 1000)
+    val sellSidePrice = new Gaussian(6000, 1000)
 
+    val buyOrders = Range(0, n).map(x => {
+      Order(OrderType.Buy, buySidePrice.sample(), 1)
+    }).toList
+
+    val sellOrders = Range(0, n).map(x => {
+      Order(OrderType.Sell, sellSidePrice.sample(), 1)
+    }).toList
+
+    getOrderBook(buyOrders ++ sellOrders)
   }
 
 }

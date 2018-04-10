@@ -8,7 +8,7 @@ import simulator.order.OrderType
 /**
   * @param arrivalTime time in UTC
   */
-case class OrderBookEntry(orderType: OrderType.Value, trader: Trader, orderId: Int, arrivalTime: LocalDateTime, price: Int, size: Int) {
+case class OrderBookEntry(orderType: OrderType.Value, trader: Trader, orderId: Int, arrivalTime: LocalDateTime, price: Double, size: Double) {
   override def toString: String = {
     "ORDER " + orderType +
     " trader: " + trader.id +

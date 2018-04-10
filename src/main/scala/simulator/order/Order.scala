@@ -5,7 +5,7 @@ object OrderType extends Enumeration {
 }
 
 // TODO: just parameterise this with a Buy/Sell type?
-case class Order(orderType: OrderType.Value, price: Int, size: Int) {
+case class Order(orderType: OrderType.Value, price: Double, size: Double) {
 
 }
 

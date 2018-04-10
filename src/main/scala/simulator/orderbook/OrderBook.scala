@@ -19,27 +19,25 @@ class OrderBook(askSide: OrderBookSide,
   // TODO: see if we can set this to some kind of default start time
   private var virtualTime: LocalDateTime = LocalDateTime.now()
   // TODO: add minPrice / maxPrice?
-  // Negative prices dont make sense anyway, so should probably put this in
+  // Negative prices don't make sense anyway, so should probably put this in
 
   private val handsOffTrader = TraderFactory.getHandsOffTrader
   orders.foreach(submitOrder(handsOffTrader, _))
 
-  def getBidPrice: Int = {
-    bidSide.getBestPrice.getOrElse(return 0)
+  def getBidPrice: Double = {
+    bidSide.getBestPrice.getOrElse(Integer.MAX_VALUE/2)
   }
 
-  def getAskPrice: Int = {
-    askSide.getBestPrice.getOrElse(return Integer.MAX_VALUE/2)
+  def getAskPrice: Double = {
+    askSide.getBestPrice.getOrElse(0)
   }
 
-  // TODO: perhaps this logic should be moved elsewhere?
   private def getOrderID: Int = {
     _orderId += 1
     _orderId
   }
 
   // TODO: use proper logging instead of println
-  // TODO: make OrderBookEntry in here
   def submitOrder(trader: Trader, order: Order): Unit = {
     println("order submitted")
     val orderBookEntry = OrderBookEntry(order.orderType, trader, getOrderID, virtualTime, order.price, order.size)
@@ -53,7 +51,7 @@ class OrderBook(askSide: OrderBookSide,
   }
 
   private def submitBuyOrder(order: OrderBookEntry): Unit = {
-    val askPrice = askSide.getBestPrice.getOrElse(0)
+    val askPrice: Double = askSide.getBestPrice.getOrElse(0)
 
     if (order.price > askPrice) {
       bidSide.addLimitOrder(order)

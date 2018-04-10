@@ -9,9 +9,7 @@ import simulator.TestConstants
 
 class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
 
-  // TODO: change this to something more meaningful?
   val startTime = LocalDateTime.of(2014, 2, 17, 9, 0, 0)
-  // TODO: make the simulator.orderbook common?
   var orderBook: OrderBook = _
   var traderParams: TraderParams = _
   var trader: BestPriceRateTrader = _

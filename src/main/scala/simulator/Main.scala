@@ -3,7 +3,7 @@ package simulator
 import java.time.LocalDateTime
 
 import simulator.order.{Order, OrderType}
-import simulator.orderbook.{OrderBook, OrderBookSide, OrderBookSideType}
+import simulator.orderbook.{OrderBook, OrderBookFactory, OrderBookSide, OrderBookSideType}
 import simulator.trader.BestPriceRateTrader
 import simulator.trader.TraderParams
 
@@ -18,7 +18,7 @@ object Main {
 
     val bestBuyPrice = 99
     val bestSellPrice = 101
-    val standardOrderSize = 10
+    val standardOrderSize = 1
     val basicBuyOrder = Order(OrderType.Buy, bestBuyPrice, standardOrderSize)
     val basicSellOrder = Order(OrderType.Sell, bestSellPrice, standardOrderSize)
 
@@ -32,14 +32,15 @@ object Main {
     val bidSide = new OrderBookSide(OrderBookSideType.Bid)
 
     val transactionLog = new TransactionLog()
-    val orderBook = new OrderBook(askSide, bidSide, List(), transactionLog)
+//    val orderBook = new OrderBook(askSide, bidSide, List(), transactionLog)
+    val orderBook = OrderBookFactory.getPopulatedOrderBook(20)
 
-    orderBook.submitOrder(sellTrader, basicSellOrder)
-    orderBook.submitOrder(buyTrader, basicBuyOrder)
+//    orderBook.submitOrder(sellTrader, basicSellOrder)
+    //    orderBook.submitOrder(buyTrader, basicBuyOrder)
 
     val simulator = new Simulator(LocalDateTime.now(),
       Duration.fromNanos(1e6),
-      10,
+      20,
       List(buyTrader, sellTrader),
       List(orderBook))
 

@@ -150,11 +150,12 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     trade
   }
 
-  private def getOrdersAtPrice(price: Int): Iterator[OrderBookEntry] = {
+  private def getOrdersAtPrice(price: Double): Iterator[OrderBookEntry] = {
     activeOrders.filter(order => order.price == price).iterator
   }
 
-  private def getDepth(price: Int): Int = {
+  // TODO: consider accuracy of doubles...
+  private def getDepth(price: Double): Double = {
     getOrdersAtPrice(price).map(_.size).sum
   }
 
@@ -164,7 +165,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     Some(orderToCancel)
   }
 
-  def getBestPrice: Option[Int] = {
+  def getBestPrice: Option[Double] = {
     val bestOrder = sideType match {
       case OrderBookSideType.Bid =>
         activeOrders.lastOption
