@@ -10,7 +10,7 @@ class TraderSpec extends FlatSpec {
   val initialHoldings = 20
   val initialBalance = 10
 
-  def testTrader() = {
+  private def testTrader() = {
     val traderParams = TraderParams(TestConstants.minOrderIndex, initialBalance, initialHoldings)
     new TestTrader(traderParams)
   }

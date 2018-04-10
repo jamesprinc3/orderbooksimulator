@@ -18,7 +18,7 @@ class TransactionLog() {
   }
 
   def writeToFile(filepath: String): Unit = {
-
+    
   }
 
   override def toString: String = {

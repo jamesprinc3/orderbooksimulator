@@ -11,6 +11,7 @@ abstract class Trader(traderParams: TraderParams) {
   val id: Int = traderParams.id
   private var balance = traderParams.initialBalance
   private var holdings = traderParams.initialHoldings
+  protected var virtualTime = LocalDateTime.now()
 
   def updateState(trade: Trade): Unit = {
     val diff = trade.price * trade.size

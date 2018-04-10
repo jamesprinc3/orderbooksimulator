@@ -17,13 +17,17 @@ object TraderFactory {
     List(buyTrader, sellTrader)
   }
 
-
-  /** The hands off trader is just an empty shell that does nothing
-    *
-    */
   def getHandsOffTrader: Trader = {
     val params = TraderParams(0, 10, 0)
     new HandsOffTrader(params)
+  }
+
+
+  def getRandomTraders(activityProbability: Double, n: Int): List[RandomTrader] = {
+    Range(0, n).map(x => {
+      val traderParams = TraderParams(x, 100, 100)
+      new RandomTrader(activityProbability, traderParams)
+    }).toList
   }
 
 }

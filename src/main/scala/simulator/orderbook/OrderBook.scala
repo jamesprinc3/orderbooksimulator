@@ -6,6 +6,7 @@ import simulator.TransactionLog
 import simulator.order.{Order, OrderType, Trade}
 import simulator.trader.Trader
 import simulator.trader.TraderFactory
+import scala.concurrent.duration.Duration
 
 // TODO: poke a hole in this class to allow access to ask/bid sides?
 class OrderBook(askSide: OrderBookSide,
@@ -14,7 +15,7 @@ class OrderBook(askSide: OrderBookSide,
                 val transactionLog: TransactionLog = new TransactionLog()) {
 
   private var _orderId = 0
-  private val _tickSize = 1
+  private val _tickLength = Duration.fromNanos(1e6)
   private val _lotSize = 1
   // TODO: see if we can set this to some kind of default start time
   private var virtualTime: LocalDateTime = LocalDateTime.now()
@@ -25,11 +26,15 @@ class OrderBook(askSide: OrderBookSide,
   orders.foreach(submitOrder(handsOffTrader, _))
 
   def getBidPrice: Double = {
-    bidSide.getBestPrice.getOrElse(Integer.MAX_VALUE/2)
+    bidSide.getBestPrice.getOrElse(Integer.MAX_VALUE / 2)
   }
 
   def getAskPrice: Double = {
     askSide.getBestPrice.getOrElse(0)
+  }
+
+  def getPrice: Double = {
+    (getBidPrice + getAskPrice) / 2
   }
 
   private def getOrderID: Int = {
@@ -40,7 +45,12 @@ class OrderBook(askSide: OrderBookSide,
   // TODO: use proper logging instead of println
   def submitOrder(trader: Trader, order: Order): Unit = {
     println("order submitted")
-    val orderBookEntry = OrderBookEntry(order.orderType, trader, getOrderID, virtualTime, order.price, order.size)
+    val orderBookEntry = OrderBookEntry(order.orderType,
+                                        trader,
+                                        getOrderID,
+                                        virtualTime,
+                                        order.price,
+                                        order.size)
     transactionLog.addOrder(orderBookEntry)
     order.orderType match {
       case OrderType.Buy =>
@@ -79,11 +89,35 @@ class OrderBook(askSide: OrderBookSide,
 
   def cancelOrder(orderId: Int): Boolean = {
     askSide.cancelOrder(orderId).isDefined ||
-      bidSide.cancelOrder(orderId).isDefined
+    bidSide.cancelOrder(orderId).isDefined
   }
 
   def getNumberOfOrders: Int = {
     askSide.getActiveOrders.size + bidSide.getActiveOrders.size
+  }
+
+  def getVolatility(ticks: Int): Double = {
+    val windowCutoff = virtualTime.minusNanos(_tickLength.toNanos * ticks)
+
+    val lastTradeBeforeWindow = transactionLog.trades
+      .filter(trade => trade.time.isBefore(windowCutoff))
+      .head
+
+    val validTrades = transactionLog.trades.filter(trade =>
+      trade.time.isAfter(virtualTime.minusNanos(_tickLength.toNanos * ticks)))
+
+    val prices = Range(0, ticks).map(n => {
+      val time = windowCutoff.plusNanos(_tickLength.toNanos * n)
+      val price = validTrades
+        .find(trade => !trade.time.isAfter(time))
+        .getOrElse(lastTradeBeforeWindow)
+        .price
+
+      price
+    })
+
+    val mean = prices.sum / ticks
+    prices.map(a => math.pow(a - mean, 2)).sum / prices.size
   }
 
   def step(newTime: LocalDateTime): Unit = {
