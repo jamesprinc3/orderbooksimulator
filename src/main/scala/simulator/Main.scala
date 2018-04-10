@@ -4,8 +4,8 @@ import java.time.LocalDateTime
 
 import simulator.order.{Order, OrderType}
 import simulator.orderbook.{OrderBook, OrderBookFactory, OrderBookSide, OrderBookSideType}
-import simulator.trader.BestPriceRateTrader
-import simulator.trader.TraderParams
+import simulator.simulators.TimeSliceSimulator
+import simulator.trader.{BestPriceRateTrader, TraderFactory, TraderParams}
 
 import scala.concurrent.duration.Duration
 
@@ -22,26 +22,23 @@ object Main {
     val basicBuyOrder = Order(OrderType.Buy, bestBuyPrice, standardOrderSize)
     val basicSellOrder = Order(OrderType.Sell, bestSellPrice, standardOrderSize)
 
-    val buyParams = TraderParams(17, 100, 1)
-    val sellParams = TraderParams(18, 100, 1)
-
-    val buyTrader = new BestPriceRateTrader(OrderType.Buy, 100, startTime, buyParams)
-    val sellTrader = new BestPriceRateTrader(OrderType.Sell, 100, startTime, sellParams)
+    val traders = TraderFactory.getBasicTraders()
 
     val askSide = new OrderBookSide(OrderBookSideType.Ask)
     val bidSide = new OrderBookSide(OrderBookSideType.Bid)
 
     val transactionLog = new TransactionLog()
 //    val orderBook = new OrderBook(askSide, bidSide, List(), transactionLog)
-    val orderBook = OrderBookFactory.getPopulatedOrderBook(20)
-
+//    val orderBook = OrderBookFactory.getPopulatedOrderBook(20)
+      val filePath = "/Users/jamesprince/project-data/orderbook.csv"
+      val orderBook = OrderBookFactory.importOrderBook(filePath)
 //    orderBook.submitOrder(sellTrader, basicSellOrder)
     //    orderBook.submitOrder(buyTrader, basicBuyOrder)
 
-    val simulator = new Simulator(LocalDateTime.now(),
+    val simulator = new TimeSliceSimulator(LocalDateTime.now(),
       Duration.fromNanos(1e6),
-      20,
-      List(buyTrader, sellTrader),
+      1,
+      traders,
       List(orderBook))
 
     simulator.run()

@@ -2,7 +2,7 @@ package simulator.trader
 
 import java.time.LocalDateTime
 
-import simulator.order.Trade
+import simulator.order.{Order, Trade}
 import simulator.orderbook.OrderBook
 
 // TODO: simulator.trader factory?
@@ -23,6 +23,6 @@ abstract class Trader(traderParams: TraderParams) {
     }
   }
 
-  // This way we can vary the size between steps, for optimisng TWAP stuff perhaps?
   def step(newTime: LocalDateTime, orderBooks: List[OrderBook] = List())
+    : List[(LocalDateTime, Trader, OrderBook, Order)]
 }

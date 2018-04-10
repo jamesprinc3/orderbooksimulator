@@ -21,7 +21,8 @@ libraryDependencies  ++= Seq(
   "org.scalanlp" %% "breeze-viz" % "0.13.2",
 
   "org.scalactic" %% "scalactic" % "3.0.4",
-  "org.scalatest" %% "scalatest" % "3.0.4" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.4" % "test",
+  "com.github.tototoshi" %% "scala-csv" % "1.3.5"
 )
 
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"

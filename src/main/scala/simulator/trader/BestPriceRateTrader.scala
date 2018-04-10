@@ -15,19 +15,23 @@ class BestPriceRateTrader(orderType: OrderType.Value,
 
   private val size = 10
 
-  override def step(newTime: LocalDateTime, orderBooks: List[OrderBook]): Unit = {
-    val tick = ChronoUnit.NANOS.between(time, newTime) / 1e9
+  override def step(newTime: LocalDateTime, orderBooks: List[OrderBook])
+    : List[(LocalDateTime, Trader, OrderBook, Order)] = {
+    time = newTime
+//    val tick = ChronoUnit.NANOS.between(time, newTime) / 1e9
 //    val tradesNeeded: Int = math.floor(rate * tick).toInt
 
-    orderBooks.foreach(orderBook => {
+    val eventsToSubmit = orderBooks.map(orderBook => {
       val price = orderType match {
         case OrderType.Buy  => orderBook.getAskPrice
         case OrderType.Sell => orderBook.getBidPrice
       }
 
-      orderBook.submitOrder(this, Order(orderType, price, size))
+//      orderBook.submitOrder(this, Order(orderType, price, size))
+      (time, this, orderBook, Order(orderType, price, size))
     })
-    time = newTime
+
+    eventsToSubmit
   }
 
   // TODO: move this to parent class, if we get some commonality

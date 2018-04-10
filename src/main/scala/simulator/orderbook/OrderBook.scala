@@ -51,9 +51,9 @@ class OrderBook(askSide: OrderBookSide,
   }
 
   private def submitBuyOrder(order: OrderBookEntry): Unit = {
-    val askPrice: Double = askSide.getBestPrice.getOrElse(0)
+    val askPrice = askSide.getBestPrice
 
-    if (order.price > askPrice) {
+    if (askPrice.isEmpty || order.price > askPrice.get) {
       bidSide.addLimitOrder(order)
     } else {
       val (trades: Option[List[Trade]], _) = askSide.addMarketOrder(order)
@@ -64,7 +64,7 @@ class OrderBook(askSide: OrderBookSide,
   private def submitSellOrder(order: OrderBookEntry): Unit = {
     val bidPrice = bidSide.getBestPrice
 
-    if (bidPrice.isEmpty || order.price < bidPrice.get) {
+    if (bidPrice.isEmpty || order.price > bidPrice.get) {
       askSide.addLimitOrder(order)
     } else {
       val (trades: Option[List[Trade]], _) = bidSide.addMarketOrder(order)

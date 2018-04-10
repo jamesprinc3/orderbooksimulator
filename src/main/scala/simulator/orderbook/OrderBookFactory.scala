@@ -1,7 +1,10 @@
 package simulator.orderbook
 
+import java.io.File
+
 import simulator.order.{Order, OrderType}
 import breeze.stats.distributions._
+import com.github.tototoshi.csv._
 
 object OrderBookFactory {
 
@@ -15,7 +18,6 @@ object OrderBookFactory {
     orderBook
   }
 
-  // TODO: write this method
   /**
     * Returns an order book which has been populated with orders picked from a distribution
     */
@@ -32,6 +34,24 @@ object OrderBookFactory {
     }).toList
 
     getOrderBook(buyOrders ++ sellOrders)
+  }
+
+  /**
+    *
+    * @param filePath path to a CSV file
+    * @return an OrderBook populated with the orders contained within the CSV file
+    */
+  def importOrderBook(filePath: String): OrderBook = {
+    val reader = CSVReader.open(new File(filePath))
+    val orders = reader.allWithHeaders().map(order => {
+      val orderType = order("side") match {
+        case "buy" => OrderType.Buy
+        case "sell" => OrderType.Sell
+      }
+      Order(orderType, order("price").toDouble, order("size").toDouble)
+    })
+
+    getOrderBook(orders)
   }
 
 }

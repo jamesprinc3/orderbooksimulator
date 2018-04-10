@@ -6,8 +6,8 @@ import simulator.TestConstants
 import simulator.trader.{TestTrader, TraderParams}
 
 class OrderBookFactorySpec extends FlatSpec {
-  private val buyPrice = 11
-  private val sellPrice = 9
+  private val buyPrice = 9
+  private val sellPrice = 11
 
   private val buyOrders = Range(0,5).map(_ => Order(OrderType.Buy, buyPrice, 10)).toList
   private val sellOrders = Range(0,5).map(_ => Order(OrderType.Sell, sellPrice, 10)).toList
