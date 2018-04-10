@@ -161,6 +161,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
 
   def cancelOrder(orderId: Int): Option[OrderBookEntry] = {
     val orderToCancel = activeOrders.find(order => order.orderId == orderId).getOrElse(return None)
+    orderToCancel.trader.cancelOrder(orderToCancel)
     activeOrders.remove(orderToCancel)
     Some(orderToCancel)
   }

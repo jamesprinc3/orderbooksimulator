@@ -2,8 +2,8 @@ package simulator.trader
 
 import java.time.LocalDateTime
 
-import simulator.order.{Order, Trade}
-import simulator.orderbook.OrderBook
+import simulator.order.{Order, OrderType, Trade}
+import simulator.orderbook.{OrderBook, OrderBookEntry}
 
 // TODO: simulator.trader factory?
 abstract class Trader(traderParams: TraderParams) {
@@ -14,13 +14,44 @@ abstract class Trader(traderParams: TraderParams) {
 
   def updateState(trade: Trade): Unit = {
     val diff = trade.price * trade.size
-    if (trade.buyerId == id) {
-      balance += diff
-      holdings += trade.size
-    } else if (trade.sellerId == id) {
-      balance -= diff
-      holdings -= trade.size
+    id match {
+      case trade.buyerId =>
+        balance -= diff
+        holdings += trade.size
+
+      case trade.sellerId =>
+        balance += diff
+        holdings -= trade.size
+
     }
+  }
+
+  def updateState(order: Order): Unit = {
+    val diff = order.price * order.size
+    order.orderType match {
+      case OrderType.Buy =>
+        balance -= diff
+      case OrderType.Sell =>
+        holdings -= order.size
+    }
+  }
+
+  def cancelOrder(order: OrderBookEntry): Unit = {
+    val diff = order.price * order.size
+    order.orderType match {
+      case OrderType.Buy =>
+        balance += diff
+      case OrderType.Sell =>
+        holdings += order.size
+    }
+  }
+
+  def getBalance: Double = {
+    balance
+  }
+
+  def getHoldings: Double = {
+    holdings
   }
 
   def step(newTime: LocalDateTime, orderBooks: List[OrderBook] = List())
