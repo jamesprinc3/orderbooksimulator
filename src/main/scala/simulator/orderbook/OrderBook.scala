@@ -9,8 +9,8 @@ import simulator.trader.TraderFactory
 import scala.concurrent.duration.Duration
 
 // TODO: poke a hole in this class to allow access to ask/bid sides?
-class OrderBook(askSide: OrderBookSide,
-                bidSide: OrderBookSide,
+class OrderBook(val askSide: OrderBookSide,
+                val bidSide: OrderBookSide,
                 orders: List[Order] = List(),
                 val transactionLog: TransactionLog = new TransactionLog()) {
 
@@ -29,8 +29,16 @@ class OrderBook(askSide: OrderBookSide,
     bidSide.getBestPrice.getOrElse(Integer.MAX_VALUE / 2)
   }
 
+  protected[orderbook] def getBidSide: OrderBookSide = {
+    bidSide
+  }
+
   def getAskPrice: Double = {
     askSide.getBestPrice.getOrElse(0)
+  }
+
+  protected[orderbook] def getAskSide: OrderBookSide = {
+    askSide
   }
 
   def getPrice: Double = {
@@ -63,7 +71,7 @@ class OrderBook(askSide: OrderBookSide,
   private def submitBuyOrder(order: OrderBookEntry): Unit = {
     val askPrice = askSide.getBestPrice
 
-    if (askPrice.isEmpty || order.price > askPrice.get) {
+    if (askPrice.isEmpty || order.price < askPrice.get) {
       bidSide.addLimitOrder(order)
     } else {
       val (trades: Option[List[Trade]], _) = askSide.addMarketOrder(order)
@@ -100,24 +108,29 @@ class OrderBook(askSide: OrderBookSide,
     val windowCutoff = virtualTime.minusNanos(_tickLength.toNanos * ticks)
 
     val lastTradeBeforeWindow = transactionLog.trades
-      .filter(trade => trade.time.isBefore(windowCutoff))
-      .head
+      .find(trade => trade.time.isBefore(windowCutoff))
 
-    val validTrades = transactionLog.trades.filter(trade =>
-      trade.time.isAfter(virtualTime.minusNanos(_tickLength.toNanos * ticks)))
+    lastTradeBeforeWindow match {
+      case None => 0.01
+      case Some(_) =>
+        val validTrades = transactionLog.trades.filter(trade =>
+          trade.time.isAfter(virtualTime.minusNanos(_tickLength.toNanos * ticks)))
 
-    val prices = Range(0, ticks).map(n => {
-      val time = windowCutoff.plusNanos(_tickLength.toNanos * n)
-      val price = validTrades
-        .find(trade => !trade.time.isAfter(time))
-        .getOrElse(lastTradeBeforeWindow)
-        .price
+        val prices = Range(0, ticks).map(n => {
+          val time = windowCutoff.plusNanos(_tickLength.toNanos * n)
+          val price = validTrades
+            .find(trade => !trade.time.isAfter(time))
+            .getOrElse(lastTradeBeforeWindow.get)
+            .price
 
-      price
-    })
+          price
+        })
 
-    val mean = prices.sum / ticks
-    prices.map(a => math.pow(a - mean, 2)).sum / prices.size
+        val mean = prices.sum / ticks
+        prices.map(a => math.pow(a - mean, 2)).sum / prices.size
+    }
+
+
   }
 
   def step(newTime: LocalDateTime): Unit = {

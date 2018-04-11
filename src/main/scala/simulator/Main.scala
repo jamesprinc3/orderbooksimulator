@@ -29,13 +29,15 @@ object Main {
 
     val simulator = new TimeSliceSimulator(LocalDateTime.now(),
       Duration.fromNanos(1e6),
-      10,
+      100,
       traders,
       List(orderBook))
 
     simulator.run()
 
-    println(println(orderBook.transactionLog.toString))
+//    println(println(orderBook.transactionLog.toString))
+
+    orderBook.transactionLog.export("/Users/jamesprince/project-data/")
 
   }
 

@@ -25,10 +25,16 @@ class TimeSliceSimulator(startTime: LocalDateTime,
 
   override def updateState(): Unit = {
     time = time.plusNanos(increment.toNanos)
+    println("UpdateState: " + elapsedTimeSteps + " time: " + time.toString)
+
     // Update the time that each transaction log sees (note, this should have no side effects)
     orderBooks.foreach(_.step(time))
-    // Update the time that each trader sees
-    traders.foreach(_.step(time, orderBooks))
+    // Update the time that each trader sees, get the events that each traders wants to do
+    val events = traders.flatMap(_.step(time, orderBooks))
+    // Submit these orders to the correct OrderBook
+    println(events)
+    events.foreach(event => event._3.submitOrder(event._2, event._4))
+
     elapsedTimeSteps += 1
   }
 }

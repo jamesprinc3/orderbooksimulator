@@ -1,5 +1,6 @@
 package simulator
 
+import com.github.tototoshi.csv.CSVWriter
 import simulator.order.Trade
 import simulator.orderbook.OrderBookEntry
 
@@ -8,7 +9,6 @@ class TransactionLog() {
   var trades: List[Trade] = List()
   var orders: List[OrderBookEntry] = List()
 
-  // TODO: maybe this is dog-slow?
   def addTrade(trade: Trade): Unit = {
     trades = trades ::: List(trade)
   }
@@ -17,8 +17,46 @@ class TransactionLog() {
     orders = orders ::: List(order)
   }
 
-  def writeToFile(filepath: String): Unit = {
-    
+  def export(fileDir: String): Unit = {
+    val orderHeader =
+      List("time", "side", "trader_id", "order_id", "price", "size")
+    val orderData: Seq[Seq[String]] = orders.map(
+      order =>
+        Seq(order.arrivalTime.toString,
+            order.orderType.toString,
+            order.trader.id.toString,
+            order.price.toString,
+            order.size.toString))
+    writeEvents(fileDir + "orders.csv", orderHeader, orderData)
+
+    val tradeHeader = List("time",
+                           "buyer_id",
+                           "buyer_order_id",
+                           "seller_id",
+                           "seller_order_id",
+                           "price",
+                           "size")
+    val tradeData = trades.map(
+      trade =>
+        List(
+          trade.time.toString,
+          trade.buyerId.toString,
+          trade.buyerOrderId.toString,
+          trade.sellerId.toString,
+          trade.sellerOrderId.toString,
+          trade.price.toString,
+          trade.size.toString
+      ))
+    writeEvents(fileDir + "trades.csv", tradeHeader, tradeData)
+  }
+
+  private def writeEvents(filePath: String,
+                          header: Seq[String],
+                          data: Seq[Seq[String]]): Unit = {
+    val writer = CSVWriter.open(filePath)
+
+    writer.writeRow(header)
+    writer.writeAll(data)
   }
 
   override def toString: String = {

@@ -29,33 +29,43 @@ class RandomTrader(activityProbability: Double, traderParams: TraderParams)
     orderBooks.flatMap(orderBook => {
       if (Random.nextFloat() < activityProbability) {
 
-        val beta = new LogNormal(quantityMu, quantitySigma).sample()
-        val priceSigma = k * orderBook.getVolatility(volatilityTicks)
+        val beta = Math.min(new LogNormal(quantityMu, quantitySigma).sample(), 1)
+        val priceSigma = k * 0.01 //orderBook.getVolatility(volatilityTicks)
         val norm = new Gaussian(priceMu, priceSigma).sample()
         val midPrice = orderBook.getPrice
+
+        println(beta, priceMu, priceSigma, norm, midPrice)
 
         if (Random.nextFloat() < 0.5) {
 
           // Buy Order
-          val quantity = this.getBalance * midPrice * Math.min(1, beta)
+          val quantity = (this.getBalance * beta) / midPrice
           val price = midPrice * norm
-          List(
-            (virtualTime,
-              this,
-              orderBook,
-              Order(OrderType.Buy, price, quantity)))
 
+          if (price <= 0 || quantity <= 0) {
+            List()
+          } else {
+            List(
+              (virtualTime,
+                this,
+                orderBook,
+                Order(OrderType.Buy, price, quantity)))
+          }
         } else {
 
           // Sell Order
           val quantity = this.getHoldings * beta
           val price = midPrice / norm
-          List(
-            (virtualTime,
-              this,
-              orderBook,
-              Order(OrderType.Sell, price, quantity)))
 
+          if (price <= 0 || quantity <= 0) {
+            List()
+          } else {
+            List(
+              (virtualTime,
+                this,
+                orderBook,
+                Order(OrderType.Sell, price, quantity)))
+          }
         }
       } else {
         List()

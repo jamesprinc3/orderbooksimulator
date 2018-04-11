@@ -25,7 +25,7 @@ object TraderFactory {
 
   def getRandomTraders(activityProbability: Double, n: Int): List[RandomTrader] = {
     Range(0, n).map(x => {
-      val traderParams = TraderParams(x, 100, 100)
+      val traderParams = TraderParams(x, 1, 1)
       new RandomTrader(activityProbability, traderParams)
     }).toList
   }

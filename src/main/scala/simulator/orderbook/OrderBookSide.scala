@@ -30,22 +30,16 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
       res = -1
     }
 
-    println("res: " + res)
-
     // But if it's Bid side, just reverse the sign
     if (sideType == OrderBookSideType.Bid) {
       res *= -1
     }
-
-    println("res: " + res)
 
     if (x.orderId < y.orderId) {
       res = 1
     } else if (x.orderId > y.orderId) {
       res = -1
     }
-
-    println("res: " + res)
 
     res
   }
@@ -119,11 +113,12 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
         return (Some(tradesThatHappened), Some(partialIncomingOrder))
       }
 
-      if (remainingSize < 0) {
-        // Put this partially matched order back in our active orders as a limit order
-        val partialOpenOrder = openOrder.copy(size = -1*remainingSize)
-        activeOrders.+=(partialOpenOrder)
-      }
+//      if (remainingSize < 0) {
+//        // Put this partially matched order back in our active orders as a limit order
+//
+//        val partialOpenOrder = openOrder.copy(size = -1*remainingSize)
+//        activeOrders.+=(partialOpenOrder)
+//      }
       return (Some(tradesThatHappened), None)
     }
     (None, Some(incomingOrder))
