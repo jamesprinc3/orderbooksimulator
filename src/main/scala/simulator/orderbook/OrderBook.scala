@@ -2,10 +2,12 @@ package simulator.orderbook
 
 import java.time.LocalDateTime
 
+import com.typesafe.scalalogging.Logger
 import simulator.TransactionLog
 import simulator.order.{Order, OrderType, Trade}
 import simulator.trader.Trader
 import simulator.trader.TraderFactory
+
 import scala.concurrent.duration.Duration
 
 // TODO: poke a hole in this class to allow access to ask/bid sides?
@@ -24,6 +26,8 @@ class OrderBook(val askSide: OrderBookSide,
 
   private val handsOffTrader = TraderFactory.getHandsOffTrader
   orders.foreach(submitOrder(handsOffTrader, _))
+
+  private val logger = Logger(this.getClass)
 
   def getBidPrice: Double = {
     bidSide.getBestPrice.getOrElse(Integer.MAX_VALUE / 2)
@@ -52,7 +56,6 @@ class OrderBook(val askSide: OrderBookSide,
 
   // TODO: use proper logging instead of println
   def submitOrder(trader: Trader, order: Order): Unit = {
-    println("order submitted")
     val orderBookEntry = OrderBookEntry(order.orderType,
                                         trader,
                                         getOrderID,
@@ -129,11 +132,10 @@ class OrderBook(val askSide: OrderBookSide,
         val mean = prices.sum / ticks
         prices.map(a => math.pow(a - mean, 2)).sum / prices.size
     }
-
-
   }
 
   def step(newTime: LocalDateTime): Unit = {
+    logger.debug("Number of orders: " + getNumberOfOrders)
     virtualTime = newTime
   }
 

@@ -1,9 +1,7 @@
 package simulator.orderbook
 
-import java.time.LocalDateTime
-
-import simulator.order.{Order, OrderType, Trade}
-import simulator.trader.Trader
+import com.typesafe.scalalogging.Logger
+import simulator.order.{OrderType, Trade}
 
 import scala.collection.mutable
 
@@ -12,6 +10,8 @@ object OrderBookSideType extends Enumeration {
 }
 
 class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEntry] = List()) {
+
+  private val logger = Logger(this.getClass)
 
   // TODO: match on simulator.order book type?
   implicit val ordering: Ordering[OrderBookEntry] = (x: OrderBookEntry, y: OrderBookEntry) => {
@@ -57,11 +57,11 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     // Need to check that if we're Bid side then we're getting a buy simulator.order here
     sideType match {
       case OrderBookSideType.Bid => if (order.orderType == OrderType.Sell) {
-        println("Expected simulator.order type Buy, but was Sell")
+        logger.error("Expected simulator.order type Buy, but was Sell")
         return
       }
       case OrderBookSideType.Ask => if (order.orderType == OrderType.Buy) {
-        println("Expected simulator.order type Sell, but was Buy")
+        logger.error("Expected simulator.order type Sell, but was Buy")
         return
       }
     }
@@ -79,49 +79,54 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     *         choose whether to re-enter this as a limit simulator.order.
     */
   def addMarketOrder(incomingOrder: OrderBookEntry): (Option[List[Trade]], Option[OrderBookEntry]) = {
-    // Bid side will accept a sell simulator.order here
+    // Bid side will accept a sell simulator.order here and vice versa
     sideType match {
       case OrderBookSideType.Bid => if (incomingOrder.orderType == OrderType.Buy) {
-        println("Expected simulator.order type Sell, but was Buy")
+        logger.error("Expected simulator.order type Sell, but was Buy")
         return (None, Some(incomingOrder))
       }
       case OrderBookSideType.Ask => if (incomingOrder.orderType == OrderType.Sell) {
-        println("Expected simulator.order type Buy, but was Sell")
+        logger.error("Expected simulator.order type Buy, but was Sell")
         return (None, Some(incomingOrder))
       }
     }
 
-    val depthAtPrice = getDepth(incomingOrder.price)
-    if (depthAtPrice >= 0) {
-      var remainingSize = incomingOrder.size
-      val iter = activeOrders.iterator
-      var openOrder: OrderBookEntry = null
-      var tradesThatHappened: List[Trade] = List[Trade]()
-      while (remainingSize > 0 && iter.hasNext) {
-        openOrder = iter.next()
-        remainingSize -= openOrder.size
-        activeOrders.remove(openOrder)
+    val iter = activeOrders.iterator
+    var remainingSize = incomingOrder.size
+    var openOrder: OrderBookEntry = null
+    var tradesThatHappened: List[Trade] = List[Trade]()
+    while (iter.hasNext && remainingSize > 0) {
+      openOrder = iter.next()
+      var shouldMatch = false
+      sideType match {
+        case OrderBookSideType.Bid =>
+          shouldMatch = openOrder.price >= incomingOrder.price
+        case OrderBookSideType.Ask =>
+          shouldMatch = openOrder.price <= incomingOrder.price
+      }
 
+      if (shouldMatch) {
         val trade = reconcile(openOrder, incomingOrder)
         tradesThatHappened = tradesThatHappened ++ List(trade)
-        // TODO: the above line is pretty ugly!
+        // TODO: perhaps move this logic into the reconcile function?
+        activeOrders.remove(openOrder)
+        remainingSize -= openOrder.size
       }
-
-      if (remainingSize > 0) {
-        // Enter this partially matched order as a limit simulator.order (on the other side of the book!)
-        val partialIncomingOrder = incomingOrder.copy(size = remainingSize)
-        return (Some(tradesThatHappened), Some(partialIncomingOrder))
-      }
-
-//      if (remainingSize < 0) {
-//        // Put this partially matched order back in our active orders as a limit order
-//
-//        val partialOpenOrder = openOrder.copy(size = -1*remainingSize)
-//        activeOrders.+=(partialOpenOrder)
-//      }
-      return (Some(tradesThatHappened), None)
     }
-    (None, Some(incomingOrder))
+
+    if (remainingSize > 0) {
+      // Return the partially matched order (and the orderbook may reinstate it as a limit order on the other side of the book)
+      val partialIncomingOrder = incomingOrder.copy(size = remainingSize)
+      return (Some(tradesThatHappened), Some(partialIncomingOrder))
+    }
+
+    if (remainingSize < 0) {
+      // Re-add the partially matched open order to this OrderBookSide
+      val partialOpenOrder = openOrder.copy(size = -1*remainingSize)
+      addLimitOrder(partialOpenOrder)
+    }
+
+    (Some(tradesThatHappened), None)
   }
 
   protected[orderbook] def reconcile(openOrder: OrderBookEntry, incomingOrder: OrderBookEntry): Trade = {
@@ -138,7 +143,6 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
           taker.id, openOrder.orderId,incomingOrder.price,
           Math.min(incomingOrder.size, openOrder.size))
     }
-    // TODO: submit the trade to some kind of transaction log
 
     maker.updateState(trade)
     taker.updateState(trade)
@@ -170,7 +174,6 @@ class OrderBookSide(sideType: OrderBookSideType.Value, orders: List[OrderBookEnt
     }
 
     if (bestOrder.isEmpty) {
-      println("Return None")
       return None
     } else {
       return Some(bestOrder.get.price)

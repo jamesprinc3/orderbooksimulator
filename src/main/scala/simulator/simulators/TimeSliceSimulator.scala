@@ -2,6 +2,7 @@ package simulator.simulators
 
 import java.time.LocalDateTime
 
+import com.typesafe.scalalogging.Logger
 import simulator.orderbook.OrderBook
 import simulator.trader.Trader
 
@@ -19,20 +20,21 @@ class TimeSliceSimulator(startTime: LocalDateTime,
   private var elapsedTimeSteps = 0
   private var time = startTime
 
+  private val logger = Logger(this.getClass)
+
   override def endCondition(): Boolean = {
     elapsedTimeSteps >= timeSteps
   }
 
   override def updateState(): Unit = {
     time = time.plusNanos(increment.toNanos)
-    println("UpdateState: " + elapsedTimeSteps + " time: " + time.toString)
+    logger.debug("UpdateState: " + elapsedTimeSteps + " time: " + time.toString)
 
     // Update the time that each transaction log sees (note, this should have no side effects)
     orderBooks.foreach(_.step(time))
     // Update the time that each trader sees, get the events that each traders wants to do
     val events = traders.flatMap(_.step(time, orderBooks))
     // Submit these orders to the correct OrderBook
-    println(events)
     events.foreach(event => event._3.submitOrder(event._2, event._4))
 
     elapsedTimeSteps += 1

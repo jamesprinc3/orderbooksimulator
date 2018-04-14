@@ -5,6 +5,7 @@ import simulator.orderbook.OrderBook
 
 import scala.util.Random
 import breeze.stats.distributions._
+import com.typesafe.scalalogging.Logger
 import simulator.order.{Order, OrderType}
 
 /**
@@ -21,7 +22,9 @@ class RandomTrader(activityProbability: Double, traderParams: TraderParams)
   private val quantityMu = 0.25
   private val quantitySigma = 0.2
 
-  private val priceMu = 1.02
+  private val priceMu = 1.0
+
+  private val logger = Logger(this.getClass)
 
   override def step(newTime: LocalDateTime, orderBooks: List[OrderBook]) = {
 
@@ -34,7 +37,7 @@ class RandomTrader(activityProbability: Double, traderParams: TraderParams)
         val norm = new Gaussian(priceMu, priceSigma).sample()
         val midPrice = orderBook.getPrice
 
-        println(beta, priceMu, priceSigma, norm, midPrice)
+        logger.debug(List("beta: ", beta, "priceMu:", priceMu, "priceSigma: :", priceSigma, "norm: ", norm, midPrice).map(_.toString).mkString(" "))
 
         if (Random.nextFloat() < 0.5) {
 

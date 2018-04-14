@@ -23,11 +23,17 @@ object TraderFactory {
   }
 
 
-  def getRandomTraders(activityProbability: Double, n: Int): List[RandomTrader] = {
+  def getRandomTraders(activityProbability: Double, n: Int, totalBalance: Double, totalHoldings: Double): List[RandomTrader] = {
     Range(0, n).map(x => {
-      val traderParams = TraderParams(x, 1, 1)
+      val traderParams = TraderParams(x, getWealth(totalBalance, n, x), getWealth(totalHoldings, n, x))
       new RandomTrader(activityProbability, traderParams)
     }).toList
+  }
+
+  private def getWealth(totalBalance: Double, numTraders: Int, index: Int) = {
+    val eulerMascheroni = 0.577215664901532
+    val richest = totalBalance / (Math.log(numTraders) + eulerMascheroni)
+    richest / index
   }
 
 }

@@ -3,23 +3,27 @@ package simulator
 import java.time.LocalDateTime
 
 import simulator.order.{Order, OrderType}
-import simulator.orderbook.{
-  OrderBook,
-  OrderBookFactory,
-  OrderBookSide,
-  OrderBookSideType
-}
-import simulator.simulators.{DiscreteEventSimulator, TimeSliceSimulator}
-import simulator.trader.{BestPriceRateTrader, TraderFactory, TraderParams}
+import simulator.orderbook.{OrderBookFactory, OrderBookSide, OrderBookSideType}
+import simulator.simulators.TimeSliceSimulator
+import simulator.trader.TraderFactory
 
 import scala.concurrent.duration.Duration
+import ch.qos.logback.classic.{Level, Logger}
+import org.slf4j.LoggerFactory
 
 object Main {
+
+  private val logger = com.typesafe.scalalogging.Logger(this.getClass)
 
   val filePath = "/Users/jamesprince/project-data/orderbook.csv"
 
   def main(args: Array[String]): Unit = {
-    val traders = TraderFactory.getRandomTraders(0.1, 100)
+    LoggerFactory
+      .getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
+      .asInstanceOf[Logger]
+      .setLevel(Level.DEBUG)
+
+    val traders = TraderFactory.getRandomTraders(0.1, 100, 10000, 1)
     val orderBook = OrderBookFactory.importOrderBook(filePath)
 //    val simulator = new DiscreteEventSimulator(
 //      LocalDateTime.now(),
@@ -28,14 +32,14 @@ object Main {
 //      List(orderBook))
 
     val simulator = new TimeSliceSimulator(LocalDateTime.now(),
-      Duration.fromNanos(1e6),
+                                           Duration.fromNanos(1e6),
       100,
-      traders,
-      List(orderBook))
+                                           traders,
+                                           List(orderBook))
 
     simulator.run()
 
-//    println(println(orderBook.transactionLog.toString))
+    logger.debug(orderBook.transactionLog.toString)
 
     orderBook.transactionLog.export("/Users/jamesprince/project-data/")
 
@@ -74,7 +78,7 @@ object Main {
     simulator.run()
     println(orderBook.transactionLog.toString)
 
-    println("Simulation finished")
+    logger.info("Simulation finished")
 
   }
 

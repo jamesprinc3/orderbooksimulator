@@ -22,7 +22,9 @@ libraryDependencies  ++= Seq(
 
   "org.scalactic" %% "scalactic" % "3.0.4",
   "org.scalatest" %% "scalatest" % "3.0.4" % "test",
-  "com.github.tototoshi" %% "scala-csv" % "1.3.5"
+  "com.github.tototoshi" %% "scala-csv" % "1.3.5",
+  "ch.qos.logback" % "logback-classic" % "1.2.3",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
 )
 
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
