@@ -18,15 +18,15 @@ object TraderFactory {
   }
 
   def getHandsOffTrader: Trader = {
-    val params = TraderParams(0, 10, 0)
+    val params = TraderParams(-1, 10, 0)
     new HandsOffTrader(params)
   }
 
 
-  def getRandomTraders(activityProbability: Double, n: Int, totalBalance: Double, totalHoldings: Double): List[RandomTrader] = {
+  def getRandomTraders(orderProbability: Double, cancelProbability: Double, n: Int, totalBalance: Double, totalHoldings: Double): List[RandomTrader] = {
     Range(0, n).map(x => {
       val traderParams = TraderParams(x, getWealth(totalBalance, n, x), getWealth(totalHoldings, n, x))
-      new RandomTrader(activityProbability, traderParams)
+      new RandomTrader(orderProbability, cancelProbability, traderParams)
     }).toList
   }
 

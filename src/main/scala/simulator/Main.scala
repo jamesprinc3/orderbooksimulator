@@ -23,7 +23,7 @@ object Main {
       .asInstanceOf[Logger]
       .setLevel(Level.DEBUG)
 
-    val traders = TraderFactory.getRandomTraders(0.1, 100, 10000, 1)
+    val traders = TraderFactory.getRandomTraders(0.2, 0.2, 100, 10000, 1)
     val orderBook = OrderBookFactory.importOrderBook(filePath)
 //    val simulator = new DiscreteEventSimulator(
 //      LocalDateTime.now(),
@@ -33,7 +33,7 @@ object Main {
 
     val simulator = new TimeSliceSimulator(LocalDateTime.now(),
                                            Duration.fromNanos(1e6),
-      100,
+      1000,
                                            traders,
                                            List(orderBook))
 
@@ -41,8 +41,8 @@ object Main {
 
     logger.debug(orderBook.transactionLog.toString)
 
-    orderBook.transactionLog.export("/Users/jamesprince/project-data/")
-
+    orderBook.transactionLog.export("/Users/jamesprince/project-data/sims/")
+    traders.foreach(t => t.getTransactionLog.export("/Users/jamesprince/project-data/sims/" + t.id.toString))
   }
 
   def oldMain(args: Array[String]): Unit = {

@@ -54,7 +54,6 @@ class OrderBook(val askSide: OrderBookSide,
     _orderId
   }
 
-  // TODO: use proper logging instead of println
   def submitOrder(trader: Trader, order: Order): Unit = {
     val orderBookEntry = OrderBookEntry(order.orderType,
                                         trader,
@@ -62,7 +61,10 @@ class OrderBook(val askSide: OrderBookSide,
                                         virtualTime,
                                         order.price,
                                         order.size)
+
     transactionLog.addOrder(orderBookEntry)
+    trader.updateState(orderBookEntry)
+
     order.orderType match {
       case OrderType.Buy =>
         submitBuyOrder(orderBookEntry)
@@ -77,7 +79,13 @@ class OrderBook(val askSide: OrderBookSide,
     if (askPrice.isEmpty || order.price < askPrice.get) {
       bidSide.addLimitOrder(order)
     } else {
-      val (trades: Option[List[Trade]], _) = askSide.addMarketOrder(order)
+      val (trades: Option[List[Trade]], partialOrder) = askSide.addMarketOrder(order)
+      partialOrder match {
+        case Some(pOrder) =>
+          pOrder.trader.updateState(pOrder)
+          submitSellOrder(pOrder)
+        case None =>
+      }
       trades.get.foreach(transactionLog.addTrade)
     }
   }
@@ -88,7 +96,13 @@ class OrderBook(val askSide: OrderBookSide,
     if (bidPrice.isEmpty || order.price > bidPrice.get) {
       askSide.addLimitOrder(order)
     } else {
-      val (trades: Option[List[Trade]], _) = bidSide.addMarketOrder(order)
+      val (trades: Option[List[Trade]], partialOrder) = bidSide.addMarketOrder(order)
+      partialOrder match {
+        case Some(pOrder) =>
+          pOrder.trader.updateState(pOrder)
+          submitSellOrder(pOrder)
+        case None =>
+      }
       trades.get.foreach(transactionLog.addTrade)
     }
   }
