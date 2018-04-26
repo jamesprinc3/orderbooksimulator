@@ -1,5 +1,8 @@
 package simulator
 
+import java.io.File
+import java.nio.file.{Files, Path, Paths}
+
 import com.github.tototoshi.csv.CSVWriter
 import simulator.order.Trade
 import simulator.orderbook.OrderBookEntry
@@ -18,6 +21,8 @@ class TransactionLog() {
   }
 
   def export(fileDir: String): Unit = {
+    ensureDirectoryExists(fileDir)
+
     val orderHeader =
       List("time", "side", "trader_id", "order_id", "price", "size")
     val orderData: Seq[Seq[String]] = orders.map(
@@ -25,6 +30,7 @@ class TransactionLog() {
         Seq(order.arrivalTime.toString,
             order.orderType.toString,
             order.trader.id.toString,
+            order.orderId.toString,
             order.price.toString,
             order.size.toString))
     writeEvents(fileDir + "orders.csv", orderHeader, orderData)
@@ -50,9 +56,18 @@ class TransactionLog() {
     writeEvents(fileDir + "trades.csv", tradeHeader, tradeData)
   }
 
+  private def ensureDirectoryExists(dir: String): Unit = {
+    if (!Files.exists(Paths.get(dir))) {
+      new File(dir).mkdir()
+    }
+  }
+
   private def writeEvents(filePath: String,
                           header: Seq[String],
                           data: Seq[Seq[String]]): Unit = {
+
+
+
     val writer = CSVWriter.open(filePath)
 
     writer.writeRow(header)

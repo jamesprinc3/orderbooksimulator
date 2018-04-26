@@ -7,12 +7,24 @@ import simulator.trader.{TestTrader, TraderParams}
 
 class OrderBookSpec extends FlatSpec {
 
+  private val initialBalance = 10
+  private val initialHoldings = 10
+
+  private var tradeId = 1
+
+  private def testTrader() = {
+    val traderParams =
+      TraderParams(tradeId, initialBalance, initialHoldings)
+    tradeId += 1
+    new TestTrader(traderParams)
+  }
+
   // TODO: make this into some kind of system constant
   "initialization" should "populate OrderBookSides with the correct orders" in {
     val orderBook = TestOrderBook.getEmptyOrderBook
 
     val order = Order(OrderType.Buy, 10, 10)
-    orderBook.submitOrder(null, order)
+    orderBook.submitOrder(testTrader(), order)
 
     assert(orderBook.getBidPrice == 10)
   }
@@ -21,7 +33,7 @@ class OrderBookSpec extends FlatSpec {
     val orderBook = TestOrderBook.getEmptyOrderBook
 
     val order = Order(OrderType.Buy, 10, 10)
-    orderBook.submitOrder(null, order)
+    orderBook.submitOrder(testTrader(), order)
 
     assert(orderBook.getBidPrice == 10)
   }
@@ -30,7 +42,7 @@ class OrderBookSpec extends FlatSpec {
     val orderBook = TestOrderBook.getEmptyOrderBook
 
     val order = Order(OrderType.Sell,10, 10)
-    orderBook.submitOrder(null, order)
+    orderBook.submitOrder(testTrader(), order)
 
     assert(orderBook.getAskPrice == 10)
   }
@@ -39,7 +51,7 @@ class OrderBookSpec extends FlatSpec {
     val orderBook = TestOrderBook.getEmptyOrderBook
 
     val order = Order(OrderType.Buy, 10, 10)
-    orderBook.submitOrder(null, order)
+    orderBook.submitOrder(testTrader(), order)
 
     val enterredOrder = orderBook.getBidSide.getActiveOrders.head
 
@@ -52,7 +64,7 @@ class OrderBookSpec extends FlatSpec {
     val orderBook = TestOrderBook.getEmptyOrderBook
 
     val order = Order(OrderType.Sell, 10, 10)
-    orderBook.submitOrder(null, order)
+    orderBook.submitOrder(testTrader(), order)
 
     val enterredOrder = orderBook.getAskSide.getActiveOrders.head
 
@@ -69,8 +81,8 @@ class OrderBookSpec extends FlatSpec {
     val buyOrder = Order(OrderType.Buy, buyPrice, 10)
     val sellOrder = Order(OrderType.Sell, sellPrice, 10)
 
-    orderBook.submitOrder(null, buyOrder)
-    orderBook.submitOrder(null, sellOrder)
+    orderBook.submitOrder(testTrader(), buyOrder)
+    orderBook.submitOrder(testTrader(), sellOrder)
 
     assert(orderBook.getBidSide.getActiveOrders.size == 1)
     assert(orderBook.getAskSide.getActiveOrders.size == 1)
@@ -84,11 +96,11 @@ class OrderBookSpec extends FlatSpec {
     val buyOrder = Order(OrderType.Buy, buyPrice, 10)
     val sellOrder = Order(OrderType.Sell, sellPrice, 10)
 
-    val traderParams = TraderParams(0, 10, 10)
-    val testTrader = new TestTrader(traderParams)
+    val buyTrader = testTrader()
+    val sellTrader = testTrader()
 
-    orderBook.submitOrder(testTrader, buyOrder)
-    orderBook.submitOrder(testTrader, sellOrder)
+    orderBook.submitOrder(buyTrader, buyOrder)
+    orderBook.submitOrder(sellTrader, sellOrder)
 
     assert(orderBook.getBidSide.getActiveOrders.isEmpty)
     assert(orderBook.getAskSide.getActiveOrders.isEmpty)

@@ -21,7 +21,8 @@ class RandomTrader(orderProbability: Double,
   private val k = 3.5
   private val volatilityTicks = 20
 
-  private val quantityMu = 0.25
+  // TODO: this value was previously 0.25
+  private val quantityMu = 1
   private val quantitySigma = 0.2
 
   private val priceMu = 1
@@ -47,8 +48,8 @@ class RandomTrader(orderProbability: Double,
 
   private def generateOrder(orderBook: OrderBook) = {
 
-    val beta = Math.min(new LogNormal(quantityMu, quantitySigma).sample(), 1)
-    val priceSigma = 0.001 //k * 0.01 //orderBook.getVolatility(volatilityTicks)
+    val beta = Math.max(new LogNormal(quantityMu, quantitySigma).sample(), 0)
+    val priceSigma = 0.0001 //k * 0.01 //orderBook.getVolatility(volatilityTicks)
     val norm = new Gaussian(priceMu, priceSigma).sample()
     val midPrice = orderBook.getPrice
 

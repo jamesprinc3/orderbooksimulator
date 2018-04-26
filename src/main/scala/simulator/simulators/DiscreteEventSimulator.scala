@@ -2,6 +2,7 @@ package simulator.simulators
 
 import java.time.{LocalDateTime, ZoneOffset}
 
+import com.typesafe.scalalogging.Logger
 import simulator.order.Order
 import simulator.orderbook.OrderBook
 import simulator.trader.Trader
@@ -22,14 +23,21 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
     PriorityQueue.empty[(LocalDateTime, Trader, OrderBook, Order)](
       Ordering.by((_: (LocalDateTime, Trader, OrderBook, Order))._1).reverse)
 
+  private val logger = Logger(this.getClass)
+
+  private var DELETE_THIS = 0
+
   override def endCondition(): Boolean = {
-    virtualTime.isAfter(endTime) || eventQueue.isEmpty
+    DELETE_THIS += 1
+    virtualTime.isAfter(endTime) || (eventQueue.isEmpty && virtualTime != startTime) || DELETE_THIS == 10
   }
 
   override def updateState(): Unit = {
     try {
       val event = eventQueue.dequeue()
       virtualTime = event._1
+      logger.debug("Virtual Time: " + virtualTime)
+      logger.debug(eventQueue.toString())
 
       // Submit the order to the OrderBook that is given
       event._3.submitOrder(event._2, event._4)

@@ -23,26 +23,32 @@ object Main {
       .asInstanceOf[Logger]
       .setLevel(Level.DEBUG)
 
-    val traders = TraderFactory.getRandomTraders(0.2, 0.2, 100, 10000, 1)
-    val orderBook = OrderBookFactory.importOrderBook(filePath)
-//    val simulator = new DiscreteEventSimulator(
-//      LocalDateTime.now(),
-//      LocalDateTime.now().plusNanos(10000000),
-//      traders,
-//      List(orderBook))
+    val simsRoot = "/Users/jamesprince/project-data/sims/"
+//    val orderBook = OrderBookFactory.importOrderBook(filePath)
 
-    val simulator = new TimeSliceSimulator(LocalDateTime.now(),
-                                           Duration.fromNanos(1e6),
-      1000,
-                                           traders,
-                                           List(orderBook))
+    // TODO: paralellise this
+    Range(0, 2).foreach( simulatorNumber => {
+      val traders = TraderFactory.getRandomTraders(0.2, 0.2, 100, 10000, 1)
+      val orderBook = OrderBookFactory.importOrderBook(filePath)
+  //    val simulator = new DiscreteEventSimulator(
+  //      LocalDateTime.now(),
+  //      LocalDateTime.now().plusNanos(10000000),
+  //      traders,
+  //      List(orderBook))
 
-    simulator.run()
+      val simulator = new TimeSliceSimulator(LocalDateTime.now(),
+                                             Duration.fromNanos(1e6),
+        10000,
+                                             traders,
+                                             List(orderBook))
 
-    logger.debug(orderBook.transactionLog.toString)
+      simulator.run()
 
-    orderBook.transactionLog.export("/Users/jamesprince/project-data/sims/")
-    traders.foreach(t => t.getTransactionLog.export("/Users/jamesprince/project-data/sims/" + t.id.toString))
+      logger.debug(orderBook.transactionLog.toString)
+
+      orderBook.transactionLog.export(simsRoot + simulatorNumber + "/")
+      traders.foreach(t => t.getTransactionLog.export(simsRoot + simulatorNumber + "/" + t.id.toString))
+    })
   }
 
   def oldMain(args: Array[String]): Unit = {

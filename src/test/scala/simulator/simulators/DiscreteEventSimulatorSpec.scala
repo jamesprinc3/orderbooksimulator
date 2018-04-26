@@ -8,8 +8,8 @@ import simulator.trader.{Trader, TraderFactory}
 
 class DiscreteEventSimulatorSpec extends FlatSpec {
 
-  val startTime = LocalDateTime.of(2014, 2, 17, 9, 0, 0)
-  val endTime = startTime.plusMinutes(5)
+  private val startTime = LocalDateTime.of(2014, 2, 17, 9, 0, 0)
+  private val endTime = startTime.plusSeconds(5)
 //  val traders: List[Trader]
 //  val orderBooks: List[OrderBook]
 
@@ -50,6 +50,16 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
 
     assert(simulator.getQueue().length == 2)
   }
+
+//  it should "add events in the correct order (by earliest time first)" in {
+//    val traders = TraderFactory.getBasicTraders()
+//    val orderBooks = List(OrderBookFactory.getOrderBook())
+//    val simulator = new DiscreteEventSimulator(startTime, endTime, traders, orderBooks)
+//
+//    simulator.updateState()
+//
+//    assert(simulator.getQueue().foldLeft(Lo) )   //((e1, e2) => e1._1.isBefore(e2._1)))
+//  }
 
   "run" should "submit orders inside a simulation" in {
     val traders = TraderFactory.getBasicTraders()

@@ -79,13 +79,7 @@ class OrderBook(val askSide: OrderBookSide,
     if (askPrice.isEmpty || order.price < askPrice.get) {
       bidSide.addLimitOrder(order)
     } else {
-      val (trades: Option[List[Trade]], partialOrder) = askSide.addMarketOrder(order)
-      partialOrder match {
-        case Some(pOrder) =>
-          pOrder.trader.updateState(pOrder)
-          submitSellOrder(pOrder)
-        case None =>
-      }
+      val (trades: Option[List[Trade]], _) = askSide.addMarketOrder(order)
       trades.get.foreach(transactionLog.addTrade)
     }
   }
@@ -96,13 +90,7 @@ class OrderBook(val askSide: OrderBookSide,
     if (bidPrice.isEmpty || order.price > bidPrice.get) {
       askSide.addLimitOrder(order)
     } else {
-      val (trades: Option[List[Trade]], partialOrder) = bidSide.addMarketOrder(order)
-      partialOrder match {
-        case Some(pOrder) =>
-          pOrder.trader.updateState(pOrder)
-          submitSellOrder(pOrder)
-        case None =>
-      }
+      val (trades: Option[List[Trade]], _) = bidSide.addMarketOrder(order)
       trades.get.foreach(transactionLog.addTrade)
     }
   }
@@ -149,7 +137,7 @@ class OrderBook(val askSide: OrderBookSide,
   }
 
   def step(newTime: LocalDateTime): Unit = {
-    logger.debug("Number of orders: " + getNumberOfOrders)
+//    logger.debug("Number of orders: " + getNumberOfOrders)
     virtualTime = newTime
   }
 

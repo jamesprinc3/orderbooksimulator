@@ -51,6 +51,8 @@ object OrderBookFactory {
       Order(orderType, order("price").toDouble, order("size").toDouble)
     })
 
+    println(orders.sortBy(order => order.price).mkString("\n"))
+
     getOrderBook(orders)
   }
 

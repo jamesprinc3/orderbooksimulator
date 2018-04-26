@@ -6,6 +6,8 @@ import java.time.temporal.ChronoUnit
 import simulator.order.{Order, OrderType}
 import simulator.orderbook.OrderBook
 
+import breeze.stats.distributions._
+
 // A simulator.trader which just matches the best price (and therefore adds depth at the edge of the book).
 class BestPriceRateTrader(orderType: OrderType.Value,
                           rate: Int,
@@ -27,8 +29,9 @@ class BestPriceRateTrader(orderType: OrderType.Value,
         case OrderType.Sell => orderBook.getBidPrice
       }
 
-//      orderBook.submitOrder(this, Order(orderType, price, size))
-      (time, this, orderBook, Order(orderType, price, size))
+      val interval = new LogNormal(0.12, 1.22).sample()
+
+      (time.plusNanos((interval * 1e6).toLong), this, orderBook, Order(orderType, price, size))
     })
 
     eventsToSubmit

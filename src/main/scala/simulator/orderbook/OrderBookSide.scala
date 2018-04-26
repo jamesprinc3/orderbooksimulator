@@ -38,10 +38,12 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
         res *= -1
       }
 
-      if (x.orderId < y.orderId) {
-        res = 1
-      } else if (x.orderId > y.orderId) {
-        res = -1
+      if (res == 0) {
+        if (x.orderId < y.orderId) {
+          res = 1
+        } else if (x.orderId > y.orderId) {
+          res = -1
+        }
       }
 
       res
@@ -100,22 +102,22 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
     }
 
     val iter = activeOrders.iterator
-    var remainingSize = incomingOrder.size
+    var mutableIncomingOrder = incomingOrder.copy()
     var openOrder: OrderBookEntry = null
     var tradesThatHappened: List[Trade] = List[Trade]()
-    while (iter.hasNext && remainingSize > 0) {
+    while (iter.hasNext && mutableIncomingOrder.size > 0) {
       openOrder = iter.next()
 
       breakable {
-        if (openOrder.trader.id == incomingOrder.trader.id) {
+        if (openOrder.trader.id == mutableIncomingOrder.trader.id) {
           break
         } else {
           var shouldMatch = false
           sideType match {
             case OrderBookSideType.Bid =>
-              shouldMatch = openOrder.price >= incomingOrder.price
+              shouldMatch = openOrder.price >= mutableIncomingOrder.price
             case OrderBookSideType.Ask =>
-              shouldMatch = openOrder.price <= incomingOrder.price
+              shouldMatch = openOrder.price <= mutableIncomingOrder.price
           }
 
           if (shouldMatch) {
@@ -123,21 +125,21 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
             tradesThatHappened = tradesThatHappened ++ List(trade)
             // TODO: perhaps move this logic into the reconcile function?
             activeOrders.remove(openOrder)
-            remainingSize -= openOrder.size
+            mutableIncomingOrder = mutableIncomingOrder.copy(size = mutableIncomingOrder.size - openOrder.size)
           }
         }
       }
     }
 
-    if (remainingSize > 0) {
+    if (mutableIncomingOrder.size > 0) {
       // Return the partially matched order (and the orderbook may reinstate it as a limit order on the other side of the book)
-      val partialIncomingOrder = incomingOrder.copy(size = remainingSize)
+      val partialIncomingOrder = incomingOrder.copy(size = mutableIncomingOrder.size)
       return (Some(tradesThatHappened), Some(partialIncomingOrder))
     }
 
-    if (remainingSize < 0) {
+    if (mutableIncomingOrder.size < 0) {
       // Re-add the partially matched open order to this OrderBookSide
-      val partialOpenOrder = openOrder.copy(size = -1 * remainingSize)
+      val partialOpenOrder = openOrder.copy(size = -1 * mutableIncomingOrder.size)
       addLimitOrder(partialOpenOrder)
     }
 
@@ -156,7 +158,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
               openOrder.orderId,
               maker.id,
               incomingOrder.orderId,
-              incomingOrder.price,
+              openOrder.price,
               Math.min(incomingOrder.size, openOrder.size))
       case OrderBookSideType.Ask =>
         Trade(incomingOrder.arrivalTime,
@@ -164,7 +166,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
               incomingOrder.orderId,
               taker.id,
               openOrder.orderId,
-              incomingOrder.price,
+              openOrder.price,
               Math.min(incomingOrder.size, openOrder.size))
     }
 
@@ -200,12 +202,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
   }
 
   def getBestPrice: Option[Double] = {
-    val bestOrder = sideType match {
-      case OrderBookSideType.Bid =>
-        activeOrders.lastOption
-      case OrderBookSideType.Ask =>
-        activeOrders.headOption
-    }
+    val bestOrder = activeOrders.headOption
 
     if (bestOrder.isEmpty) {
       return None
