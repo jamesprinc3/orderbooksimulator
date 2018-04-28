@@ -121,7 +121,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
           }
 
           if (shouldMatch) {
-            val trade = reconcile(openOrder, incomingOrder)
+            val trade = reconcile(openOrder, mutableIncomingOrder)
             tradesThatHappened = tradesThatHappened ++ List(trade)
             // TODO: perhaps move this logic into the reconcile function?
             activeOrders.remove(openOrder)
@@ -170,13 +170,13 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
               Math.min(incomingOrder.size, openOrder.size))
     }
 
-    try {
+//    try {
       maker.updateState(trade)
       taker.updateState(trade)
-    } catch {
-      case e: IllegalStateException =>
-      case e                        => logger.error(e.toString)
-    }
+//    } catch {
+//      case e: IllegalStateException =>
+//      case e                        => logger.error(e.toString)
+//    }
 
     trade
   }

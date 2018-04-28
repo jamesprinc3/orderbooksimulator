@@ -4,12 +4,14 @@ import java.time.LocalDateTime
 
 import simulator.order.{Order, OrderType}
 import simulator.orderbook.{OrderBookFactory, OrderBookSide, OrderBookSideType}
-import simulator.simulators.TimeSliceSimulator
+import simulator.simulators.{DiscreteEventSimulator, TimeSliceSimulator}
 import simulator.trader.TraderFactory
 
 import scala.concurrent.duration.Duration
 import ch.qos.logback.classic.{Level, Logger}
 import org.slf4j.LoggerFactory
+
+import scala.reflect.io.Path
 
 object Main {
 
@@ -24,23 +26,31 @@ object Main {
       .setLevel(Level.DEBUG)
 
     val simsRoot = "/Users/jamesprince/project-data/sims/"
-//    val orderBook = OrderBookFactory.importOrderBook(filePath)
+    val simsFile = Path(simsRoot)
+
+    // Flush the directory on each run
+    simsFile.deleteRecursively()
+    simsFile.createDirectory()
+    val orderBook = OrderBookFactory.importOrderBook(filePath)
+
+
 
     // TODO: paralellise this
-    Range(0, 2).foreach( simulatorNumber => {
-      val traders = TraderFactory.getRandomTraders(0.2, 0.2, 100, 10000, 1)
+    Range(0, 1).foreach( simulatorNumber => {
+      val startTime = LocalDateTime.now()
+      val traders = TraderFactory.getRandomTraders(0.15, 0.15, 10, 10000, 1)
       val orderBook = OrderBookFactory.importOrderBook(filePath)
-  //    val simulator = new DiscreteEventSimulator(
-  //      LocalDateTime.now(),
-  //      LocalDateTime.now().plusNanos(10000000),
-  //      traders,
-  //      List(orderBook))
+      val simulator = new DiscreteEventSimulator(
+        startTime,
+        startTime.plusNanos((7 * 1e9).toLong),
+        traders,
+        List(orderBook))
 
-      val simulator = new TimeSliceSimulator(LocalDateTime.now(),
-                                             Duration.fromNanos(1e6),
-        10000,
-                                             traders,
-                                             List(orderBook))
+//      val simulator = new TimeSliceSimulator(LocalDateTime.now(),
+//                                             Duration.fromNanos(1e6),
+//        10000,
+//                                             traders,
+//                                             List(orderBook))
 
       simulator.run()
 

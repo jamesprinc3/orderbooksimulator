@@ -9,4 +9,5 @@ class TestTrader(traderParams: TraderParams) extends Trader(traderParams) {
   override def step(newTime: LocalDateTime, orderBooks: List[OrderBook])
     : List[(LocalDateTime, Trader, OrderBook, Order)] = {List()}
 
+  override def initialStep(orderBooks: List[OrderBook]) = {List()}
 }

@@ -3,8 +3,8 @@ package simulator.simulators
 import java.time.LocalDateTime
 
 import org.scalatest.FlatSpec
-import simulator.orderbook.{OrderBook, OrderBookFactory}
-import simulator.trader.{Trader, TraderFactory}
+import simulator.orderbook.OrderBookFactory
+import simulator.trader.TraderFactory
 
 class DiscreteEventSimulatorSpec extends FlatSpec {
 
@@ -16,13 +16,7 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
   "endCondition" should "be false at the start" in {
     val simulator = new DiscreteEventSimulator(startTime, endTime, null, null)
 
-    assert(simulator.endCondition())
-  }
-
-  it should "be true when queue is empty" in {
-    val simulator = new DiscreteEventSimulator(startTime, endTime, null, null)
-
-    assert(simulator.endCondition())
+    assert(!simulator.endCondition())
   }
 
   it should "be true when currentTime is after endTime" in {
@@ -51,15 +45,15 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
     assert(simulator.getQueue().length == 2)
   }
 
-//  it should "add events in the correct order (by earliest time first)" in {
-//    val traders = TraderFactory.getBasicTraders()
-//    val orderBooks = List(OrderBookFactory.getOrderBook())
-//    val simulator = new DiscreteEventSimulator(startTime, endTime, traders, orderBooks)
-//
-//    simulator.updateState()
-//
-//    assert(simulator.getQueue().foldLeft(Lo) )   //((e1, e2) => e1._1.isBefore(e2._1)))
-//  }
+  it should "add events in the correct order (by earliest time first)" in {
+    val traders = TraderFactory.getBasicTraders()
+    val orderBooks = List(OrderBookFactory.getOrderBook())
+    val simulator = new DiscreteEventSimulator(startTime, endTime, traders, orderBooks)
+
+    simulator.updateState()
+
+    assert(simulator.getQueue().toList.map(_._1).sliding(2).map(list => list.head.isBefore(list(1))).reduce(_&&_)) // .map(case List(a,b) => a))//.fold((e1: OrderBookEntry, e2: OrderBookEntry) => e1.arrivalTime.isBefore(e2.arrivalTime)) )   //())
+  }
 
   "run" should "submit orders inside a simulation" in {
     val traders = TraderFactory.getBasicTraders()

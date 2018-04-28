@@ -39,4 +39,7 @@ class TimeSliceSimulator(startTime: LocalDateTime,
 
     elapsedTimeSteps += 1
   }
+
+  // TODO: maybe implement
+  override def initialState(): Unit = {}
 }

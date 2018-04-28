@@ -102,6 +102,9 @@ abstract class Trader(traderParams: TraderParams) {
     transactionLog
   }
 
+  def initialStep(orderBooks: List[OrderBook] = List())
+  : List[(LocalDateTime, Trader, OrderBook, Order)]
+
   def step(newTime: LocalDateTime, orderBooks: List[OrderBook] = List())
     : List[(LocalDateTime, Trader, OrderBook, Order)]
 }

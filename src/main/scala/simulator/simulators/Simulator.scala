@@ -10,7 +10,10 @@ abstract class Simulator(traders: List[Trader], orderBooks: List[OrderBook]) {
 
   def updateState(): Unit
 
+  def initialState(): Unit
+
   def run(): Unit = {
+    initialState()
     while (!endCondition()) {
       updateState()
     }

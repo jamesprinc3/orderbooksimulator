@@ -41,4 +41,6 @@ class BestPriceRateTrader(orderType: OrderType.Value,
   def getTime: LocalDateTime = {
     time
   }
+
+  override def initialStep(orderBooks: List[OrderBook]) = {List()}
 }
