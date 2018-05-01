@@ -67,7 +67,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
 
       // Update the time that each trader sees and collate any orders sent back
       val eventsToSubmit =
-        traders.map(_.step(virtualTime, orderBooks)).reduce(_++_)
+        event._2.step(virtualTime, orderBooks)
 
       // Queue up the events
 //      if (eventQueue.length < 100) {
@@ -75,7 +75,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
 //      }
     } catch {
       case e: IllegalStateException => throw e
-      case NonFatal(t) =>
+      case NonFatal(t) => logger.error("We haz error: " + t)
     }
 
 

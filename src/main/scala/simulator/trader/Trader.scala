@@ -23,7 +23,7 @@ abstract class Trader(traderParams: TraderParams) {
   def updateState(trade: Trade): Unit = {
 //    logger.debug("UPDATE TRADE - trader " + this.id.toString + " " + openOrders.toString())
     transactionLog.addTrade(trade)
-    logger.debug(trade.toString)
+//    logger.debug(trade.toString)
     val diff = trade.price * trade.size
     id match {
       case trade.buyerId =>

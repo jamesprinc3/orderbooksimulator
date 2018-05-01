@@ -13,10 +13,14 @@ abstract class Simulator(traders: List[Trader], orderBooks: List[OrderBook]) {
   def initialState(): Unit
 
   def run(): Unit = {
+    val t0 = System.nanoTime()
+
     initialState()
     while (!endCondition()) {
       updateState()
     }
+
+
   }
 
   def getTransactionLogs: List[TransactionLog] = {

@@ -1,12 +1,12 @@
 package simulator.trader
 import java.time.LocalDateTime
 
-import simulator.orderbook.OrderBook
-
-import scala.util.Random
 import breeze.stats.distributions._
 import com.typesafe.scalalogging.Logger
 import simulator.order.{Order, OrderType}
+import simulator.orderbook.OrderBook
+
+import scala.util.Random
 
 /**
   * This class submit random buy and sell orders. It is based on the Random Trader in the paper
@@ -21,14 +21,22 @@ class RandomTrader(orderProbability: Double,
   private val k = 3.5
   private val volatilityTicks = 20
 
-  private val quantityDistribution = Exponential(2.6)
+  private val quantityDistribution = new Exponential(2.6)
 
   private val priceMu = 1
-  private val buyPriceDistribution = LogNormal(17.08, 29.87)
-  private val sellPriceDistribution = LogNormal(162.10, 209.58)
+  private val buyPriceDistribution = new Exponential(17.64)//LogNormal(17.08, 29.87)
+  private val sellPriceDistribution = new Exponential(55.26)//LogNormal(162.10, 209.58)
 
   private val numTraders = 10
-  private val intervalDistribution = new Exponential(20.39/10)
+//  private val intervalDistribution = new LogNormal(0.01, 11.96)
+  private val intervalDistribution = new Exponential(10)
+
+  private val buyOrderPriceCancellationDistribution =
+    new LogNormal(16.86, 29.87)
+  private val sellOrderPriceCancellationDistribution =
+    new LogNormal(164.29, 213.28)
+
+  private val buyRatio = 0.5
 
   private val logger = Logger(this.getClass)
 
@@ -81,10 +89,10 @@ class RandomTrader(orderProbability: Double,
 //           norm,
 //           midPrice).map(_.toString).mkString(" "))
 
-    if (Random.nextFloat() < 0.5) {
+    if (Random.nextFloat() < buyRatio) {
 
       // Buy Order
-      val price = midPrice - buyPriceDistribution.sample()
+      val price = midPrice - ((buyPriceDistribution.sample() + 0.01) * 1000)
 
       // TODO: remove duplication of this condition
       if (price <= 0 || price.isNaN || price.isInfinite || quantity <= 0 || quantity.isNaN || quantity.isInfinite) {
@@ -96,7 +104,7 @@ class RandomTrader(orderProbability: Double,
     } else {
 
       // Sell Order
-      val price = midPrice + sellPriceDistribution.sample()
+      val price = midPrice + ((sellPriceDistribution.sample() - 0.04) * 1000)
 
       if (price <= 0 || price.isNaN || price.isInfinite || quantity <= 0 || quantity.isNaN || quantity.isInfinite || price > midPrice * 3) {
         generateOrder(orderBook)
@@ -109,9 +117,25 @@ class RandomTrader(orderProbability: Double,
 
   // TODO: order abstraction isn't quite right here (we should be passing desires up to the simulator...)
   private def cancelRandomOrder(orderBook: OrderBook) = {
-    if (openOrders.nonEmpty) {
+    val isBuySide = Random.nextFloat() < buyRatio
+    val validOrders = if (isBuySide) {
+      openOrders.filter(_.orderType == OrderType.Buy)
+    } else {
+      openOrders.filter(_.orderType == OrderType.Sell)
+    }
+    if (validOrders.nonEmpty) {
+      val midPrice = orderBook.getPrice
+
+      // TODO: consider changing this ratio a little?
+      val targetPrice = if (isBuySide) {
+        midPrice - buyOrderPriceCancellationDistribution.sample()
+      } else {
+        midPrice + sellOrderPriceCancellationDistribution.sample()
+      }
+
       orderBook.cancelOrder(
-        openOrders.toVector(Random.nextInt(openOrders.size)).orderId)
+        validOrders.minBy[Double](o => math.abs(o.price - targetPrice)).orderId)
+
     }
   }
 }

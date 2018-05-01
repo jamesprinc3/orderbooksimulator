@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.Logger
 import simulator.TransactionLog
-import simulator.order.{Order, OrderType, Trade}
+import simulator.order.{Cancel, Order, OrderType, Trade}
 import simulator.trader.Trader
 import simulator.trader.TraderFactory
 
@@ -101,8 +101,15 @@ class OrderBook(val askSide: OrderBookSide,
   }
 
   def cancelOrder(orderId: Int): Boolean = {
-    askSide.cancelOrder(orderId).isDefined ||
-    bidSide.cancelOrder(orderId).isDefined
+    val cancelledOrder = (askSide.cancelOrder(orderId) ++ bidSide.cancelOrder(orderId)).headOption
+
+    if (cancelledOrder.isDefined) {
+      val cancel = Cancel(virtualTime, cancelledOrder.get)
+      transactionLog.addCancel(cancel)
+      true
+    } else {
+      false
+    }
   }
 
   def getNumberOfOrders: Int = {

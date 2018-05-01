@@ -36,13 +36,13 @@ object Main {
 
 
     // TODO: paralellise this
-    Range(0, 1).foreach( simulatorNumber => {
+    Range(0, 10).foreach( simulatorNumber => {
       val startTime = LocalDateTime.now()
-      val traders = TraderFactory.getRandomTraders(0.15, 0.15, 10, 10000, 1)
+      val traders = TraderFactory.getRandomTraders(1, 0.15, 2, 10000, 1)
       val orderBook = OrderBookFactory.importOrderBook(filePath)
       val simulator = new DiscreteEventSimulator(
         startTime,
-        startTime.plusNanos((7 * 1e9).toLong),
+        startTime.plusNanos((60 * 1e9).toLong),
         traders,
         List(orderBook))
 
@@ -51,10 +51,14 @@ object Main {
 //        10000,
 //                                             traders,
 //                                             List(orderBook))
+      val t0 = System.nanoTime()
 
       simulator.run()
 
       logger.debug(orderBook.transactionLog.toString)
+
+      val t1 = System.nanoTime()
+      println("Elapsed time: " + ((t1 - t0) / 1e9) + " seconds")
 
       orderBook.transactionLog.export(simsRoot + simulatorNumber + "/")
       traders.foreach(t => t.getTransactionLog.export(simsRoot + simulatorNumber + "/" + t.id.toString))
