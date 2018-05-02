@@ -5,8 +5,11 @@ import java.io.File
 import simulator.order.{Order, OrderType}
 import breeze.stats.distributions._
 import com.github.tototoshi.csv._
+import simulator.Main.logger
 
 object OrderBookFactory {
+
+  private val logger = com.typesafe.scalalogging.Logger(this.getClass)
 
   def getOrderBook(orders: List[Order] = List()): OrderBook = {
 
@@ -51,7 +54,7 @@ object OrderBookFactory {
       Order(orderType, order("price").toDouble, order("size").toDouble)
     })
 
-    println(orders.sortBy(order => order.price).mkString("\n"))
+    logger.debug(orders.sortBy(order => order.price).mkString("\n"))
 
     getOrderBook(orders)
   }

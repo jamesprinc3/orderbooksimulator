@@ -2,108 +2,60 @@ package simulator
 
 import java.time.LocalDateTime
 
-import simulator.order.{Order, OrderType}
-import simulator.orderbook.{OrderBookFactory, OrderBookSide, OrderBookSideType}
-import simulator.simulators.{DiscreteEventSimulator, TimeSliceSimulator}
-import simulator.trader.TraderFactory
-
-import scala.concurrent.duration.Duration
 import ch.qos.logback.classic.{Level, Logger}
 import org.slf4j.LoggerFactory
+import simulator.orderbook.OrderBookFactory
+import simulator.simulators.DiscreteEventSimulator
+import simulator.trader.TraderFactory
 
 import scala.reflect.io.Path
 
 object Main {
 
   private val logger = com.typesafe.scalalogging.Logger(this.getClass)
-
+  // TODO: move this to program argument
   val filePath = "/Users/jamesprince/project-data/orderbook.csv"
 
   def main(args: Array[String]): Unit = {
     LoggerFactory
       .getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
       .asInstanceOf[Logger]
-      .setLevel(Level.DEBUG)
+      .setLevel(Level.INFO)
 
-    val simsRoot = "/Users/jamesprince/project-data/sims/"
+    // TODO: move this to program argument
+    val simsRoot = "/Users/jamesprince/project-data/sims-2/"
     val simsFile = Path(simsRoot)
 
     // Flush the directory on each run
     simsFile.deleteRecursively()
     simsFile.createDirectory()
-    val orderBook = OrderBookFactory.importOrderBook(filePath)
 
+    val prog_t0 = System.nanoTime()
 
-
-    // TODO: paralellise this
-    Range(0, 10).foreach( simulatorNumber => {
+    Range(0, 100).par.foreach( simulatorNumber => {
       val startTime = LocalDateTime.now()
-      val traders = TraderFactory.getRandomTraders(1, 0.15, 2, 10000, 1)
+      val traders = TraderFactory.getRandomTraders(1, 1, 2, 10000, 1)
       val orderBook = OrderBookFactory.importOrderBook(filePath)
       val simulator = new DiscreteEventSimulator(
         startTime,
-        startTime.plusNanos((60 * 1e9).toLong),
+        startTime.plusNanos((300 * 1e9).toLong),
         traders,
         List(orderBook))
 
-//      val simulator = new TimeSliceSimulator(LocalDateTime.now(),
-//                                             Duration.fromNanos(1e6),
-//        10000,
-//                                             traders,
-//                                             List(orderBook))
-      val t0 = System.nanoTime()
+      val sim_t0 = System.nanoTime()
 
       simulator.run()
 
       logger.debug(orderBook.transactionLog.toString)
 
-      val t1 = System.nanoTime()
-      println("Elapsed time: " + ((t1 - t0) / 1e9) + " seconds")
+      val sim_t1 = System.nanoTime()
+      logger.debug(s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
 
       orderBook.transactionLog.export(simsRoot + simulatorNumber + "/")
       traders.foreach(t => t.getTransactionLog.export(simsRoot + simulatorNumber + "/" + t.id.toString))
     })
+
+    val prog_t1 = System.nanoTime()
+    logger.info(s"Simulations took: " + ((prog_t1 - prog_t0) / 1e9) + " seconds")
   }
-
-  def oldMain(args: Array[String]): Unit = {
-    println("Hello world!")
-
-    val startTime = LocalDateTime.now()
-
-    val bestBuyPrice = 99
-    val bestSellPrice = 101
-    val standardOrderSize = 1
-    val basicBuyOrder = Order(OrderType.Buy, bestBuyPrice, standardOrderSize)
-    val basicSellOrder = Order(OrderType.Sell, bestSellPrice, standardOrderSize)
-
-    val traders = TraderFactory.getBasicTraders()
-
-    val askSide = new OrderBookSide(OrderBookSideType.Ask)
-    val bidSide = new OrderBookSide(OrderBookSideType.Bid)
-
-    val transactionLog = new TransactionLog()
-//    val orderBook = new OrderBook(askSide, bidSide, List(), transactionLog)
-//    val orderBook = OrderBookFactory.getPopulatedOrderBook(20)
-
-    val orderBook = OrderBookFactory.importOrderBook(filePath)
-//    orderBook.submitOrder(sellTrader, basicSellOrder)
-    //    orderBook.submitOrder(buyTrader, basicBuyOrder)
-
-    val simulator = new TimeSliceSimulator(LocalDateTime.now(),
-                                           Duration.fromNanos(1e6),
-                                           1,
-                                           traders,
-                                           List(orderBook))
-
-    simulator.run()
-    println(orderBook.transactionLog.toString)
-
-    logger.info("Simulation finished")
-
-  }
-
-//  def startSimulation(): Unit = {
-//    val trader = BestPriceRateTrader
-//  }
-
 }

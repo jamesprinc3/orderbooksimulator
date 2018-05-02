@@ -18,27 +18,32 @@ class RandomTrader(orderProbability: Double,
                    traderParams: TraderParams)
     extends Trader(traderParams) {
 
-  private val k = 3.5
-  private val volatilityTicks = 20
+  private val logger = Logger(this.getClass)
 
-  private val quantityDistribution = new Exponential(2.6)
-
-  private val priceMu = 1
-  private val buyPriceDistribution = new Exponential(17.64)//LogNormal(17.08, 29.87)
-  private val sellPriceDistribution = new Exponential(55.26)//LogNormal(162.10, 209.58)
-
-  private val numTraders = 10
-//  private val intervalDistribution = new LogNormal(0.01, 11.96)
-  private val intervalDistribution = new Exponential(10)
+  private val seed = Random.nextInt()
+  logger.info("Random seed: " + seed)
+  private implicit val basis: RandBasis = RandBasis.withSeed(seed)
 
   private val buyOrderPriceCancellationDistribution =
-    new LogNormal(16.86, 29.87)
+    new LogNormal(3.12, 0.8)
+  //new LogNormal(16.86, 29.87)
   private val sellOrderPriceCancellationDistribution =
-    new LogNormal(164.29, 213.28)
+    new Exponential(1.0/185.58)
+  //new LogNormal(164.29, 213.28)
 
   private val buyRatio = 0.5
 
-  private val logger = Logger(this.getClass)
+  private val buyPriceDistribution =
+    new LogNormal(3.11, 0.79)
+  // new Exponential(17.64) //LogNormal(17.08, 29.87)
+  private val sellPriceDistribution =
+    new LogNormal(5.26, 0.38)
+  // new Exponential(55.26) //LogNormal(162.10, 209.58)
+
+  private val quantityDistribution = new Exponential(0.89) //new Exponential(2.6)
+
+  private val intervalDistribution =
+    new Exponential(10) // //    new LogNormal(2.28, 1.54) new LogNormal(0.01, 11.96)
 
   override def initialStep(orderBooks: List[OrderBook])
     : List[(LocalDateTime, RandomTrader, OrderBook, Order)] = {
@@ -78,21 +83,10 @@ class RandomTrader(orderProbability: Double,
 
     val quantity = quantityDistribution.sample()
 
-//    logger.debug(
-//      List("beta: ",
-//           beta,
-//           "priceMu:",
-//           priceMu,
-//           "priceSigma: :",
-//           priceSigma,
-//           "norm: ",
-//           norm,
-//           midPrice).map(_.toString).mkString(" "))
-
     if (Random.nextFloat() < buyRatio) {
 
       // Buy Order
-      val price = midPrice - ((buyPriceDistribution.sample() + 0.01) * 1000)
+      val price = midPrice - (buyPriceDistribution.sample() - ((10.24/22.75) * 10))
 
       // TODO: remove duplication of this condition
       if (price <= 0 || price.isNaN || price.isInfinite || quantity <= 0 || quantity.isNaN || quantity.isInfinite) {
@@ -104,7 +98,7 @@ class RandomTrader(orderProbability: Double,
     } else {
 
       // Sell Order
-      val price = midPrice + ((sellPriceDistribution.sample() - 0.04) * 1000)
+      val price = midPrice + (sellPriceDistribution.sample() - ((125.01/185.58) * 10))
 
       if (price <= 0 || price.isNaN || price.isInfinite || quantity <= 0 || quantity.isNaN || quantity.isInfinite || price > midPrice * 3) {
         generateOrder(orderBook)
@@ -126,7 +120,6 @@ class RandomTrader(orderProbability: Double,
     if (validOrders.nonEmpty) {
       val midPrice = orderBook.getPrice
 
-      // TODO: consider changing this ratio a little?
       val targetPrice = if (isBuySide) {
         midPrice - buyOrderPriceCancellationDistribution.sample()
       } else {
