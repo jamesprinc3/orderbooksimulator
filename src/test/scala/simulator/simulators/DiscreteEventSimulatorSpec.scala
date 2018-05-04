@@ -26,7 +26,7 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
   }
 
   "updateState" should "add event to queue when trader returns an order" in {
-    val traders = TraderFactory.getBasicTraders()
+    val traders = TraderFactory.getBasicTraders
     val orderBooks = List(OrderBookFactory.getOrderBook())
     val simulator = new DiscreteEventSimulator(startTime, endTime, List(traders(1)), orderBooks)
 
@@ -36,7 +36,7 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
   }
 
   it should "add events to queue when traders return orders" in {
-    val traders = TraderFactory.getBasicTraders()
+    val traders = TraderFactory.getBasicTraders
     val orderBooks = List(OrderBookFactory.getOrderBook())
     val simulator = new DiscreteEventSimulator(startTime, endTime, traders, orderBooks)
 
@@ -46,7 +46,7 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
   }
 
   it should "add events in the correct order (by earliest time first)" in {
-    val traders = TraderFactory.getBasicTraders()
+    val traders = TraderFactory.getBasicTraders
     val orderBooks = List(OrderBookFactory.getOrderBook())
     val simulator = new DiscreteEventSimulator(startTime, endTime, traders, orderBooks)
 
@@ -56,7 +56,7 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
   }
 
   "run" should "submit orders inside a simulation" in {
-    val traders = TraderFactory.getBasicTraders()
+    val traders = TraderFactory.getBasicTraders
     val orderBooks = List(OrderBookFactory.getPopulatedOrderBook(1))
     val simulator = new DiscreteEventSimulator(startTime, endTime, traders, orderBooks)
 
@@ -66,7 +66,7 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
   }
 
   it should "execute some trades inside a simulation" in {
-    val traders = TraderFactory.getBasicTraders()
+    val traders = TraderFactory.getBasicTraders
     val orderBooks = List(OrderBookFactory.getPopulatedOrderBook(1))
     val simulator = new DiscreteEventSimulator(startTime, endTime, traders, orderBooks)
 

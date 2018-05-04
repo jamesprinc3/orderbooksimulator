@@ -10,8 +10,8 @@ import scala.concurrent.duration.Duration
 
 class TimeSliceSimulatorSpec extends FlatSpec {
 
-  val startTime = LocalDateTime.of(2014, 2, 17, 9, 0, 0)
-  val increment = Duration.fromNanos(1e6)
+  private val startTime = LocalDateTime.of(2014, 2, 17, 9, 0, 0)
+  private val increment = Duration.fromNanos(1e6)
 
   "endCondition" should "be false at the start" in {
     val simulator = new TimeSliceSimulator(startTime, increment, 1, null, null)
@@ -20,7 +20,7 @@ class TimeSliceSimulatorSpec extends FlatSpec {
   }
 
   it should "be true after one increment" in {
-    val traders = TraderFactory.getBasicTraders()
+    val traders = TraderFactory.getBasicTraders
     val orderBooks = List(OrderBookFactory.getOrderBook())
     val simulator = new TimeSliceSimulator(startTime, increment, 1, traders, orderBooks)
 
@@ -30,7 +30,7 @@ class TimeSliceSimulatorSpec extends FlatSpec {
   }
 
   it should "be true after ten increments" in {
-    val traders = TraderFactory.getBasicTraders()
+    val traders = TraderFactory.getBasicTraders
     val orderBooks = List(OrderBookFactory.getOrderBook())
     val simulator = new TimeSliceSimulator(startTime, increment, 10, traders, orderBooks)
 
@@ -40,7 +40,7 @@ class TimeSliceSimulatorSpec extends FlatSpec {
   }
 
   "updateState" should "submit one order" in {
-    val traders = TraderFactory.getBasicTraders()
+    val traders = TraderFactory.getBasicTraders
     val orderBooks = List(OrderBookFactory.getOrderBook())
     val simulator = new TimeSliceSimulator(startTime, increment, 1, List(traders(1)), orderBooks)
 

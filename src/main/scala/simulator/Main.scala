@@ -12,6 +12,8 @@ import scala.reflect.io.Path
 
 object Main {
 
+
+
   private val logger = com.typesafe.scalalogging.Logger(this.getClass)
   // TODO: move this to program argument
   val filePath = "/Users/jamesprince/project-data/orderbook.csv"
@@ -22,40 +24,60 @@ object Main {
       .asInstanceOf[Logger]
       .setLevel(Level.INFO)
 
-    // TODO: move this to program argument
-    val simsRoot = "/Users/jamesprince/project-data/sims-2/"
-    val simsFile = Path(simsRoot)
+    val parser = new scopt.OptionParser[Config]("scopt") {
+      head("scopt", "3.x")
 
-    // Flush the directory on each run
-    simsFile.deleteRecursively()
-    simsFile.createDirectory()
+      opt[String]('s', "sim_root").required() action { (x, c) =>
+        c.copy(simRoot = x) } text "Path to save the simulations to"
 
-    val prog_t0 = System.nanoTime()
+      opt[String]('d', "distributions_path").required() action { (x, c) =>
+        val distributions = c.parseDistributions(x)
+        c.copy(distributions = distributions)} text "Path to distributions.json file"
+    }
 
-    Range(0, 100).par.foreach( simulatorNumber => {
-      val startTime = LocalDateTime.now()
-      val traders = TraderFactory.getRandomTraders(1, 1, 2, 10000, 1)
-      val orderBook = OrderBookFactory.importOrderBook(filePath)
-      val simulator = new DiscreteEventSimulator(
-        startTime,
-        startTime.plusNanos((300 * 1e9).toLong),
-        traders,
-        List(orderBook))
+    // parser.parse returns Option[C]
+    parser.parse(args, Config()) map { config =>
+      // arguments are fine
+      // TODO: move this to program argument
+//      val simsRoot = "/Users/jamesprince/project-data/sims-2/"
+      val simRoot = config.simRoot
+      val simPath = Path(simRoot)
 
-      val sim_t0 = System.nanoTime()
+      // Flush the directory on each run
+      simPath.deleteRecursively()
+      simPath.createDirectory()
 
-      simulator.run()
+      val prog_t0 = System.nanoTime()
 
-      logger.debug(orderBook.transactionLog.toString)
+      Range(0, 10).par.foreach( simulatorNumber => {
+        val startTime = LocalDateTime.now()
+        val traders = TraderFactory.getRandomTraders(1, 0, 2, 10000, 1, config.distributions)
+        val orderBook = OrderBookFactory.importOrderBook(filePath)
+        val simulator = new DiscreteEventSimulator(
+          startTime,
+          startTime.plusNanos((300 * 1e9).toLong),
+          traders,
+          List(orderBook))
 
-      val sim_t1 = System.nanoTime()
-      logger.debug(s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
+        val sim_t0 = System.nanoTime()
 
-      orderBook.transactionLog.export(simsRoot + simulatorNumber + "/")
-      traders.foreach(t => t.getTransactionLog.export(simsRoot + simulatorNumber + "/" + t.id.toString))
-    })
+        simulator.run()
 
-    val prog_t1 = System.nanoTime()
-    logger.info(s"Simulations took: " + ((prog_t1 - prog_t0) / 1e9) + " seconds")
+        logger.debug(orderBook.transactionLog.toString)
+
+        val sim_t1 = System.nanoTime()
+        logger.debug(s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
+
+        orderBook.transactionLog.export(simRoot + simulatorNumber + "/")
+        traders.foreach(t => t.getTransactionLog.export(simRoot + simulatorNumber + "/" + t.id.toString))
+      })
+
+      val prog_t1 = System.nanoTime()
+      logger.info(s"Simulations took: " + ((prog_t1 - prog_t0) / 1e9) + " seconds")
+    } getOrElse {
+      // arguments are bad, usage message will have been displayed
+    }
   }
 }
+
+

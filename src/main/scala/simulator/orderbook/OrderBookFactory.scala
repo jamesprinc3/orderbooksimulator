@@ -2,10 +2,9 @@ package simulator.orderbook
 
 import java.io.File
 
-import simulator.order.{Order, OrderType}
 import breeze.stats.distributions._
 import com.github.tototoshi.csv._
-import simulator.Main.logger
+import simulator.order.{Order, OrderType}
 
 object OrderBookFactory {
 
