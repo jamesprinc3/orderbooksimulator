@@ -10,8 +10,6 @@ class DiscreteEventSimulatorSpec extends FlatSpec {
 
   private val startTime = LocalDateTime.of(2014, 2, 17, 9, 0, 0)
   private val endTime = startTime.plusSeconds(5)
-//  val traders: List[Trader]
-//  val orderBooks: List[OrderBook]
 
   "endCondition" should "be false at the start" in {
     val simulator = new DiscreteEventSimulator(startTime, endTime, null, null)

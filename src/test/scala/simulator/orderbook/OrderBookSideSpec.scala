@@ -2,10 +2,10 @@ package simulator.orderbook
 
 import java.time.LocalDateTime
 
-import simulator.order.{Order, OrderType}
 import org.scalatest._
 import simulator.TestConstants
-import simulator.trader.{TestTrader, Trader, TraderParams}
+import simulator.order.{Order, OrderType}
+import simulator.trader.{TestTrader, TraderParams}
 
 class OrderBookSideSpec extends FlatSpec {
 

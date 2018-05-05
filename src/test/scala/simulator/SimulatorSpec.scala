@@ -1,5 +1,0 @@
-package simulator
-
-class SimulatorSpec {
-
-}

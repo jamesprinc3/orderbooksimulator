@@ -2,9 +2,10 @@ package simulator
 
 import javafx.scene.paint.Color
 
-import breeze.stats.distributions.{ContinuousDistr, Exponential, LogNormal}
+import breeze.stats.distributions._
 import spray.json._
 import DefaultJsonProtocol._
+import com.typesafe.scalalogging.Logger
 
 import scala.io.Source
 
@@ -20,43 +21,7 @@ case class Config(simRoot: String = "",
 
   object DistJsonProtocol extends DefaultJsonProtocol {
 
-    implicit object DistListJsonFormat
-        extends RootJsonFormat[Map[String, ContinuousDistr[Double]]] {
-      def write(dist: Map[String, ContinuousDistr[Double]]) = {
-        JsString("Not implemented")
-      }
-
-      private def parseDistributionString(
-          buyPriceDist: String): ContinuousDistr[Double] = {
-
-        new Exponential(1)
-      }
-
-      def read(value: JsValue) = {
-        value.asJsObject.getFields("buy_price",
-                                   "sell_price",
-                                   "buy_cancel_price",
-                                   "sell_cancel_price",
-                                   "quantity",
-                                   "interval") match {
-          case Seq(JsString(buyPriceDist),
-                   JsString(sellPriceDist),
-                   JsString(buyCancelPriceDistStr),
-                   JsString(sellCancelPriceDistStr),
-                   JsString(quantityDistStr),
-                   JsString(intervalDistString)) => {
-            println("pattern match successful")
-
-            var distMap = Map[String, ContinuousDistr[Double]]()
-
-            distMap += ("buy_price" -> parseDistributionString(buyPriceDist))
-
-            distMap
-          }
-          case _ => throw new DeserializationException("Color expected")
-        }
-      }
-    }
+    private val logger = Logger(this.getClass)
 
     implicit object DistJsonFormat
         extends RootJsonFormat[ContinuousDistr[Double]] {
@@ -66,35 +31,39 @@ case class Config(simRoot: String = "",
 
       def read(value: JsValue) = value match {
         case JsString(distString) =>
+          logger.debug(distString)
           val distSplit = distString.split('(')
+          val coeffsStr = distSplit(1).stripSuffix(")").split(", ")
+          val coeffs: Map[String, Double] = coeffsStr.map(s => (s.split('=')(0), s.split('=')(1).toDouble)).toMap
+
+          val loc = coeffs("loc")
+          val scale = coeffs("scale")
+
           distSplit(0) match {
             case "expon" => {
-              val coeffsStr = distSplit(1).stripSuffix(")").split(", ")
-              val loc = coeffsStr(0).stripPrefix("loc=").toDouble
-              val scale = coeffsStr(1).stripPrefix("scale=").toDouble
-
-              println(distSplit(0))
-              println("loc: " + loc)
-              println("scale: " + scale)
-
-              new Exponential(1/scale)
+              new Exponential(1 / scale)
             }
             case "lognorm" => {
-              val coeffsStr = distSplit(1).stripSuffix(")").split(", ")
-
-              val stdDev = coeffsStr(0).stripPrefix("s=").toDouble
-              val loc = coeffsStr(1).stripPrefix("loc=").toDouble
-              val scale = coeffsStr(2).stripPrefix("scale=").toDouble
-
-              println(distSplit(0))
-              println("s: " + stdDev)
-              println("loc: " + loc)
-              println("scale: " + scale)
-
+              val stdDev = coeffs("s")
               new LogNormal(Math.log(scale), stdDev)
             }
+            case "cauchy" => {
+              new CauchyDistribution(loc, scale)
+            }
+            case "f" => {
+              val numeratorDegFreedom = coeffs("dfn")
+              val denominatorDegFreedom = coeffs("dfd")
+              new FDistribution(numeratorDegFreedom, denominatorDegFreedom)
+            }
+            case "beta" => {
+              val a = coeffs("a")
+              val b = coeffs("b")
+              new Beta(a, b)
+            }
+//            case "weibull_min" => {
+//              new WeibullDistribution()
+//            }
           }
-
 
       }
     }

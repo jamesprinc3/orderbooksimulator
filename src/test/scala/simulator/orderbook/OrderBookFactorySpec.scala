@@ -1,9 +1,7 @@
 package simulator.orderbook
 
-import simulator.order.{Order, OrderType}
 import org.scalatest._
-import simulator.TestConstants
-import simulator.trader.{TestTrader, TraderParams}
+import simulator.order.{Order, OrderType}
 
 class OrderBookFactorySpec extends FlatSpec {
   private val buyPrice = 9

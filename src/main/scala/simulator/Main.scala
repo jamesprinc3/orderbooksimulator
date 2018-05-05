@@ -22,7 +22,7 @@ object Main {
     LoggerFactory
       .getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
       .asInstanceOf[Logger]
-      .setLevel(Level.INFO)
+      .setLevel(Level.DEBUG)
 
     val parser = new scopt.OptionParser[Config]("scopt") {
       head("scopt", "3.x")
