@@ -3,6 +3,7 @@ import java.time.LocalDateTime
 
 import breeze.stats.distributions._
 import com.typesafe.scalalogging.Logger
+import simulator.TransformedDistr
 import simulator.order.{Order, OrderType}
 import simulator.orderbook.OrderBook
 
@@ -15,13 +16,13 @@ import scala.util.Random
   */
 class RandomTrader(orderProbability: Double,
                    cancelProbability: Double,
-                   buyPriceDistribution: ContinuousDistr[Double],
-                   sellPriceDistribution: ContinuousDistr[Double],
-                   buyOrderPriceCancellationDistribution: ContinuousDistr[Double],
-                   sellOrderPriceCancellationDistribution: ContinuousDistr[Double],
+                   buyPriceDistribution: TransformedDistr,
+                   sellPriceDistribution: TransformedDistr,
+                   buyOrderPriceCancellationDistribution: TransformedDistr,
+                   sellOrderPriceCancellationDistribution: TransformedDistr,
                    buyRatio: Double,
-                   quantityDistribution: ContinuousDistr[Double],
-                   intervalDistribution: ContinuousDistr[Double],
+                   quantityDistribution: TransformedDistr,
+                   intervalDistribution: TransformedDistr,
                    traderParams: TraderParams)
     extends Trader(traderParams) {
 
@@ -61,7 +62,7 @@ class RandomTrader(orderProbability: Double,
     if (interval < 0) {
       logger.error("interval is negative")
     }
-    val orderTime = virtualTime.plusNanos((interval * 1e9).toLong)
+    val orderTime = virtualTime.plusNanos((interval * 1e6).toLong)
 
     val quantity = quantityDistribution.sample()
 

@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 
 import breeze.stats.distributions.{ContinuousDistr, Exponential, LogNormal, RandBasis}
 import com.typesafe.scalalogging.Logger
+import simulator.TransformedDistr
 import simulator.order.OrderType
 
 import scala.util.Random
@@ -36,7 +37,8 @@ object TraderFactory {
                        n: Int,
                        totalBalance: Double,
                        totalHoldings: Double,
-                       distributions: Map[String, ContinuousDistr[Double]]
+                       buyRatio: Double,
+                       distributions: Map[String, TransformedDistr]
                       ): List[RandomTrader] = {
     Range(0, n)
       .map(x => {
@@ -62,8 +64,6 @@ object TraderFactory {
         val sellOrderPriceCancellationDistribution =
           distributions("sell_cancel_price")
 //          new LogNormal(5.26, 0.38)
-
-        val buyRatio = 0.5
 
         val quantityDistribution =
           distributions("quantity")

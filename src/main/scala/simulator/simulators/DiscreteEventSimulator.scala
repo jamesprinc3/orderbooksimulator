@@ -1,11 +1,10 @@
 package simulator.simulators
 
-import java.lang.IllegalStateException
 import java.time.{LocalDateTime, ZoneOffset}
 
 import breeze.stats.distributions.LogNormal
 import com.typesafe.scalalogging.Logger
-import simulator.order.{Order, OrderType}
+import simulator.order.Order
 import simulator.orderbook.OrderBook
 import simulator.trader.Trader
 
@@ -46,7 +45,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
 
   override def initialState(): Unit = {
     val eventsToSubmit =
-      traders.map(_.initialStep(orderBooks)).reduce(_++_)
+      traders.head.initialStep(orderBooks)
 
     // Queue up the events
     eventsToSubmit.foreach(eventQueue.enqueue(_))
@@ -69,8 +68,10 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
       // Submit the order to the OrderBook that is given
       event._3.submitOrder(event._2, event._4)
 
-      // Cancel a random order with probability 1
-      cancelRandomOrder(event._3)
+      // Cancel a random order with some probability
+      if (Random.nextDouble() < 0.9) {
+        cancelRandomOrder(event._3)
+      }
 
       // Update the time that each order book sees
       orderBooks.foreach(_.step(virtualTime))

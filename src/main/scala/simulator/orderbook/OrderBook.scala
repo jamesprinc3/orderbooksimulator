@@ -146,6 +146,7 @@ class OrderBook(val askSide: OrderBookSide,
   def step(newTime: LocalDateTime): Unit = {
 //    logger.debug("Number of orders: " + getNumberOfOrders)
     virtualTime = newTime
+    logger.debug(virtualTime + " OrderBooks size: " + getNumberOfOrders)
   }
 
 }
