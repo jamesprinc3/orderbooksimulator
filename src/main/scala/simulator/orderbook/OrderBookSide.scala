@@ -100,17 +100,17 @@ class OrderBookSide(side: Side.Value,
     while (iter.hasNext && size > 0) {
       openOrder = iter.next()
 
-      breakable {
-        if (openOrder.trader.id == trader.id) {
-          break
-        } else {
+//      breakable {
+//        if (openOrder.trader.id == trader.id) {
+//          break
+//        } else {
 
           val trade = reconcile(openOrder, trader, remainingSize)
           tradesThatHappened = tradesThatHappened ++ List(trade)
           activeOrders.remove(openOrder)
           remainingSize -= openOrder.size
-        }
-      }
+//        }
+//      }
     }
 
     if (remainingSize > 0) {
@@ -289,6 +289,10 @@ class OrderBookSide(side: Side.Value,
     } else {
       Some(bestOrder.get.price)
     }
+  }
+
+  def getVolume: Double = {
+    activeOrders.map(_.size).sum
   }
 
   // TODO: calculate some metrics (as outlined in the Gould paper for this side of the simulator.order book here, or maybe that should be moved out to another class? e.g. OrderBookMetrics

@@ -49,7 +49,7 @@ object Main {
                                                    2,
                                                    10000,
                                                    1,
-                                                   1 - config.buyOrderRatio,
+                                                   config.buyVolumeRatio,
                                                    config.distributions)
       val orderBook = OrderBookFactory.importOrderBook(config.orderBookPath)
       val simulator =

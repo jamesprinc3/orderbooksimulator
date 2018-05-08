@@ -21,6 +21,7 @@ class RandomTrader(orderProbability: Double,
                    buyOrderPriceCancellationDistribution: TransformedDistr,
                    sellOrderPriceCancellationDistribution: TransformedDistr,
                    buyRatio: Double,
+                   limitOrderRatio: Double,
                    sizeDistribution: TransformedDistr,
                    intervalDistribution: TransformedDistr,
                    traderParams: TraderParams)
@@ -65,8 +66,6 @@ class RandomTrader(orderProbability: Double,
     val orderTime = virtualTime.plusNanos((interval * 1e6).toLong)
 
     val size = sizeDistribution.sample()
-    // TODO: change this to be a parameter
-    val limitOrderRatio = 0.9
 
     val price = if (Random.nextFloat() < buyRatio) {
       // Buy Order

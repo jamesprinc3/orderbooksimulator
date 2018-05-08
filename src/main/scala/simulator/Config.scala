@@ -14,10 +14,12 @@ case class Config(numSimulations: Int = 1,
                   orderBookPath: String = "",
                   buyOrderRatio: Double = 0.5,
                   buyVolumeRatio: Double = 0.5,
+                  limitOrderRatio: Double = 0.99,
                   distributions: Map[String, TransformedDistr] =
                     Map[String, TransformedDistr]())
 
 object Config {
+
   def init(numSimulations: Int,
            parallel: Boolean,
            logLevelStr: String,
@@ -25,9 +27,14 @@ object Config {
            paramsPath: String,
            orderBookPath: String): Config = {
     val logLevel = ch.qos.logback.classic.Level.toLevel(logLevelStr)
-    val distributions = parseDistributions(paramsPath)
-    val buyOrderRatio = getBuyOrderRatio(paramsPath)
-    val buyVolumeRatio = getBuyVolumeRatio(paramsPath)
+
+    val json = Source.fromFile(paramsPath).getLines.mkString("")
+    val jsonAst = json.parseJson
+
+    val buyOrderRatio = getRatio(jsonAst, "buy_sell_order_ratio")
+    val buyVolumeRatio = getRatio(jsonAst, "buy_sell_volume_ratio")
+    val limitOrderRatio = getRatio(jsonAst, "limit_market_order_ratio")
+    val distributions = parseDistributions(jsonAst)
 
     Config(numSimulations,
            parallel,
@@ -36,6 +43,7 @@ object Config {
            orderBookPath,
            buyOrderRatio,
            buyVolumeRatio,
+           limitOrderRatio,
            distributions)
   }
 
@@ -119,12 +127,15 @@ object Config {
     }
   }
 
+  def getRatio(jsonAst: JsValue, name: String): Double = {
+    jsonAst.asJsObject().fields(name) match {
+      case JsArray(Vector(JsNumber(aRatio), JsNumber(_))) =>
+        aRatio.toDouble
+    }
+  }
+
   def parseDistributions(
-      parametersPath: String): Map[String, TransformedDistr] = {
-
-    val json = Source.fromFile(parametersPath).getLines.mkString("")
-    val jsonAst = json.parseJson
-
+      jsonAst: JsValue): Map[String, TransformedDistr] = {
     import DistJsonProtocol._
     val distributions = jsonAst.asJsObject
       .fields("distributions")
@@ -134,4 +145,6 @@ object Config {
 
     distributions
   }
+
+
 }

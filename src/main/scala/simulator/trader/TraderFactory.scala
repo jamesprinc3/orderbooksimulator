@@ -37,6 +37,7 @@ object TraderFactory {
                        totalBalance: Double,
                        totalHoldings: Double,
                        buyRatio: Double,
+                       limitOrderRatio: Double,
                        distributions: Map[String, TransformedDistr]
                       ): List[RandomTrader] = {
     Range(0, n)
@@ -80,6 +81,7 @@ object TraderFactory {
           buyOrderPriceCancellationDistribution,
           sellOrderPriceCancellationDistribution,
           buyRatio,
+          limitOrderRatio,
           quantityDistribution,
           intervalDistribution,
           traderParams
