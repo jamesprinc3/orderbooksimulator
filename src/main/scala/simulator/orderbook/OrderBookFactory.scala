@@ -1,6 +1,7 @@
 package simulator.orderbook
 
 import java.io.File
+import java.time.LocalDateTime
 
 import breeze.stats.distributions._
 import com.github.tototoshi.csv._
@@ -46,7 +47,7 @@ object OrderBookFactory {
     * @param filePath path to a CSV file
     * @return an OrderBook populated with the orders contained within the CSV file
     */
-  def importOrderBook(filePath: String): OrderBook = {
+  def importOrderBook(filePath: String, startTime: LocalDateTime): OrderBook = {
     val reader = CSVReader.open(new File(filePath))
     val handsOffTrader = TraderFactory.getHandsOffTrader
     val orders = reader.allWithHeaders().map(order => {
@@ -55,7 +56,7 @@ object OrderBookFactory {
         case "sell" => Side.Ask
       }
 
-      LimitOrder(side, handsOffTrader, order("price").toDouble, order("size").toDouble)
+      LimitOrder(startTime, side, handsOffTrader, order("price").toDouble, order("size").toDouble)
     })
 
     logger.debug(orders.sortBy(order => order.price).mkString("\n"))

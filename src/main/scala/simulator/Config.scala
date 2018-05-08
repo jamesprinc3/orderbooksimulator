@@ -99,6 +99,11 @@ object Config {
             case "chi2" =>
               val df = coeffs("df")
               new ChiSquared(df)
+            case "pareto" =>
+              val shape = coeffs("b")
+              val ret = Pareto(scale, shape)
+              scale = 1
+              ret
           }
 
           new TransformedDistr(contDist, loc, scale)

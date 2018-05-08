@@ -1,11 +1,10 @@
 package simulator.trader
 import java.time.LocalDateTime
 
-import breeze.stats.distributions._
 import com.typesafe.scalalogging.Logger
-import simulator.{Side, TransformedDistr}
 import simulator.order.{LimitOrder, MarketOrder, Order}
 import simulator.orderbook.OrderBook
+import simulator.{Side, TransformedDistr}
 
 import scala.util.Random
 
@@ -22,7 +21,8 @@ class RandomTrader(orderProbability: Double,
                    sellOrderPriceCancellationDistribution: TransformedDistr,
                    buyRatio: Double,
                    limitOrderRatio: Double,
-                   sizeDistribution: TransformedDistr,
+                   limitOrderSizeDistribution: TransformedDistr,
+                   marketOrderSizeDistribution: TransformedDistr,
                    intervalDistribution: TransformedDistr,
                    traderParams: TraderParams)
     extends Trader(traderParams) {
@@ -65,30 +65,53 @@ class RandomTrader(orderProbability: Double,
     }
     val orderTime = virtualTime.plusNanos((interval * 1e6).toLong)
 
-    val size = sizeDistribution.sample()
+    val side = if (Random.nextFloat() < buyRatio) {
+      Side.Bid
+    } else {
+      Side.Ask
+    }
 
-    val price = if (Random.nextFloat() < buyRatio) {
+    val price = generateOrderPrice(side, midPrice)
+
+    val order = if (Random.nextDouble() < limitOrderRatio) {
+      val size = generateOrderSize(limitOrderSizeDistribution)
+      LimitOrder(orderTime, side, this, price, size)
+    } else {
+      val size = generateOrderSize(marketOrderSizeDistribution)
+      logger.debug("market order size: " + size)
+      MarketOrder(orderTime, side, this, size)
+    }
+    List((orderTime, this, orderBook, order))
+  }
+
+  private def generateOrderPrice(side: Side.Value, midPrice: Double): Double = {
+    val price = if (side == Side.Bid) {
       // Buy Order
       midPrice - buyPriceDistribution
-        .sample() //  - ((10.24 / 22.75) * 10))
+        .sample()
     } else {
       // Sell Order
       midPrice + sellPriceDistribution
-        .sample() //- ((125.01 / 185.58) * 10))
+        .sample()
     }
 
-    if (price <= 0 || price.isNaN || price.isInfinite || size <= 0 || size.isNaN || size.isInfinite || price > midPrice * 3) {
-      generateOrder(orderBook)
+    if (price <= 0 || price.isNaN || price.isInfinite ||  price > midPrice * 3) {
+      generateOrderPrice(side, midPrice)
     } else {
-      val order = if (Random.nextDouble() < limitOrderRatio) {
-        LimitOrder(Side.Bid, this, price, size)
-      } else {
-        MarketOrder(Side.Bid, this, size)
-      }
-      List((orderTime, this, orderBook, order))
+      price
     }
-
   }
+
+  private def generateOrderSize(sizeDist: TransformedDistr): Double = {
+    val size = sizeDist.sample()
+    if (size <= 0 || size.isNaN || size.isInfinite) {
+      generateOrderSize(sizeDist)
+    } else {
+      size
+    }
+  }
+
+
 
   // TODO: order abstraction isn't quite right here (we should be passing desires up to the simulator...)
   // TODO: maybe remove duplication

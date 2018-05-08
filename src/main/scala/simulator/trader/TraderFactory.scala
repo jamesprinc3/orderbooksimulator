@@ -2,7 +2,12 @@ package simulator.trader
 
 import java.time.LocalDateTime
 
-import breeze.stats.distributions.{ContinuousDistr, Exponential, LogNormal, RandBasis}
+import breeze.stats.distributions.{
+  ContinuousDistr,
+  Exponential,
+  LogNormal,
+  RandBasis
+}
 import com.typesafe.scalalogging.Logger
 import simulator.{Side, TransformedDistr}
 
@@ -31,15 +36,15 @@ object TraderFactory {
     new HandsOffTrader(params)
   }
 
-  def getRandomTraders(orderProbability: Double,
-                       cancelProbability: Double,
-                       n: Int,
-                       totalBalance: Double,
-                       totalHoldings: Double,
-                       buyRatio: Double,
-                       limitOrderRatio: Double,
-                       distributions: Map[String, TransformedDistr]
-                      ): List[RandomTrader] = {
+  def getRandomTraders(
+      orderProbability: Double,
+      cancelProbability: Double,
+      n: Int,
+      totalBalance: Double,
+      totalHoldings: Double,
+      buyRatio: Double,
+      limitOrderRatio: Double,
+      distributions: Map[String, TransformedDistr]): List[RandomTrader] = {
     Range(0, n)
       .map(x => {
         val traderParams = TraderParams(x,
@@ -53,25 +58,22 @@ object TraderFactory {
 
         val buyPriceDistribution =
           distributions("buy_price")
-//          new LogNormal(3.12, 0.8)
         val sellPriceDistribution =
           distributions("sell_price")
-//          new Exponential(1.0 / 185.58)
 
         val buyOrderPriceCancellationDistribution =
           distributions("buy_cancel_price")
-        //          new LogNormal(3.11, 0.79)
         val sellOrderPriceCancellationDistribution =
           distributions("sell_cancel_price")
-//          new LogNormal(5.26, 0.38)
 
-        val quantityDistribution =
-          distributions("quantity")
-          //new Exponential(0.89)
+        val limitOrderSizeDistribution =
+          distributions("limit_size")
+
+        val marketOrderSizeDistribution =
+          distributions("market_size")
 
         val intervalDistribution =
           distributions("interval")
-          //new Exponential(10)
 
         new RandomTrader(
           orderProbability,
@@ -82,7 +84,8 @@ object TraderFactory {
           sellOrderPriceCancellationDistribution,
           buyRatio,
           limitOrderRatio,
-          quantityDistribution,
+          limitOrderSizeDistribution,
+          marketOrderSizeDistribution,
           intervalDistribution,
           traderParams
         )

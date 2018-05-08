@@ -62,19 +62,16 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
       }
       virtualTime = newTime
 
-//      logger.debug("Virtual Time: " + virtualTime)
-//      logger.debug(eventQueue.toString())
+      // Update the time that each order book sees
+      orderBooks.foreach(_.step(virtualTime))
 
       // Submit the order to the OrderBook that is given
       event._3.submitOrder(event._4)
 
       // Cancel a random order with some probability
-      if (Random.nextDouble() < 0.9) {
+      if (Random.nextDouble() < 0.99) {
         cancelRandomOrder(event._3)
       }
-
-      // Update the time that each order book sees
-      orderBooks.foreach(_.step(virtualTime))
 
       // Update the time that each trader sees and collate any orders sent back
       val eventsToSubmit =

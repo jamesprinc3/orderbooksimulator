@@ -1,22 +1,23 @@
 package simulator
 
 import java.io.File
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 
 import com.github.tototoshi.csv.CSVWriter
-import simulator.events.{Cancel, OrderBookEntry, Trade}
+import simulator.events.{Cancel, Trade}
+import simulator.order.Order
 
 class TransactionLog() {
 
   var trades: List[Trade] = List()
-  var orders: List[OrderBookEntry] = List()
+  var orders: List[Order] = List()
   var cancels: List[Cancel] = List()
 
   def addTrade(trade: Trade): Unit = {
     trades = trades ::: List(trade)
   }
 
-  def addOrder(order: OrderBookEntry): Unit = {
+  def addOrder(order: Order): Unit = {
     orders = orders ::: List(order)
   }
 
@@ -29,14 +30,7 @@ class TransactionLog() {
 
     val orderHeader =
       List("time", "side", "trader_id", "order_id", "price", "size")
-    val orderData: Seq[Seq[String]] = orders.map(
-      order =>
-        Seq(order.time.toString,
-            order.side.toString.toLowerCase(),
-            order.trader.id.toString,
-            order.orderId.toString,
-            order.price.toString,
-            order.size.toString))
+    val orderData: Seq[Seq[String]] = orders.map(order => order.toFields)
     writeEvents(fileDir + "orders.csv", orderHeader, orderData)
 
     val tradeHeader = List("time",
@@ -60,18 +54,25 @@ class TransactionLog() {
     writeEvents(fileDir + "trades.csv", tradeHeader, tradeData)
 
     val cancelHeader = List("time",
-      "arrivalTime", "side", "trader_id", "order_id", "price", "size")
+                            "arrivalTime",
+                            "side",
+                            "trader_id",
+                            "order_id",
+                            "price",
+                            "size")
     val cancelData: Seq[Seq[String]] = cancels.map(
       cancel => {
-        Seq(cancel.time.toString,
+        Seq(
+          cancel.time.toString,
           cancel.order.time.toString,
           cancel.order.side.toString.toLowerCase,
           cancel.order.trader.id.toString,
           cancel.order.orderId.toString,
           cancel.order.price.toString,
-          cancel.order.size.toString)
-      }
+          cancel.order.size.toString
         )
+      }
+    )
     writeEvents(fileDir + "cancels.csv", cancelHeader, cancelData)
   }
 
@@ -84,8 +85,6 @@ class TransactionLog() {
   private def writeEvents(filePath: String,
                           header: Seq[String],
                           data: Seq[Seq[String]]): Unit = {
-
-
 
     val writer = CSVWriter.open(filePath)
 

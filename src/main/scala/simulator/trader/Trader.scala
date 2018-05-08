@@ -40,6 +40,10 @@ abstract class Trader(traderParams: TraderParams) {
 //    logger.debug("UPDATE TRADE - trader " + this.id.toString + " " + openOrders.toString())
   }
 
+  def updateState(order: Order): Unit = {
+    transactionLog.addOrder(order)
+  }
+
   private def removeOpenOrder(tradedOrderId: Int, trade: Trade): Unit = {
     openOrders.find(_.orderId == tradedOrderId) match {
       case Some(order) =>
@@ -60,8 +64,6 @@ abstract class Trader(traderParams: TraderParams) {
 
   // TODO: maybe we can just calculate these values by looping through the openOrders (but performance might be poor)
   def updateState(order: OrderBookEntry): Unit = {
-    transactionLog.addOrder(order)
-//    logger.debug("UPDATE ORDER - trader " + this.id.toString + " " + openOrders.toString())
     openOrders += order
 
     val diff = order.price * order.size
@@ -71,11 +73,9 @@ abstract class Trader(traderParams: TraderParams) {
       case Side.Ask =>
         holdings -= order.size
     }
-//    logger.debug("UPDATE ORDER - trader " + this.id.toString + " " + openOrders.toString())
   }
 
   def cancelOrder(order: OrderBookEntry): Unit = {
-//    logger.debug("CANCEL ORDER - trader " + this.id.toString + " " + openOrders.toString())
     openOrders -= order
 
     val diff = order.price * order.size
@@ -85,7 +85,6 @@ abstract class Trader(traderParams: TraderParams) {
       case Side.Ask =>
         holdings += order.size
     }
-//    logger.debug("CANCEL ORDER - trader " + this.id.toString + " " + openOrders.toString())
   }
 
   def getBalance: Double = {

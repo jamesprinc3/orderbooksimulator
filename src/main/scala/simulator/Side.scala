@@ -1,5 +1,7 @@
 package simulator
 
 object Side extends Enumeration {
-  val Bid, Ask = Value
+  type Side = Value
+  val Bid: simulator.Side.Value = Value("buy")
+  val Ask: simulator.Side.Value = Value("sell")
 }

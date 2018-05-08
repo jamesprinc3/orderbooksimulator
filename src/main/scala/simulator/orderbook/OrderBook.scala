@@ -20,7 +20,7 @@ class OrderBook(val askSide: OrderBookSide,
   // TODO: add minPrice / maxPrice?
   // Negative prices don't make sense anyway, so should probably put this in
 
-  orders.foreach(submitOrder)
+  orders.foreach(order => submitOrder(order, false))
 
   private val logger = Logger(this.getClass)
 
@@ -48,11 +48,23 @@ class OrderBook(val askSide: OrderBookSide,
     (getBidPrice + getAskPrice) / 2
   }
 
-  def submitOrder(order: Order): Unit = {
-    order.side match {
+  def submitOrder(order: Order, checkTime: Boolean = true): Unit = {
+    if (checkTime && order.time != virtualTime) {
+      throw new IllegalStateException("Times do not match")
+    }
+
+    transactionLog.addOrder(order)
+    order.trader.updateState(order)
+    val trades = order.side match {
       case Side.Bid => bidSide.submitOrder(order)
       case Side.Ask => askSide.submitOrder(order)
     }
+
+    trades match {
+      case Some(ts) => ts.foreach(transactionLog.addTrade)
+      case None =>
+    }
+
   }
 
   def getOrder(orderId: Int): Option[OrderBookEntry] = {
@@ -61,7 +73,8 @@ class OrderBook(val askSide: OrderBookSide,
   }
 
   def cancelOrder(orderId: Int): Boolean = {
-    val cancelledOrder = (askSide.cancelOrder(orderId) ++ bidSide.cancelOrder(orderId)).headOption
+    val cancelledOrder =
+      (askSide.cancelOrder(orderId) ++ bidSide.cancelOrder(orderId)).headOption
 
     if (cancelledOrder.isDefined) {
       val cancel = Cancel(virtualTime, cancelledOrder.get)
@@ -85,8 +98,10 @@ class OrderBook(val askSide: OrderBookSide,
     lastTradeBeforeWindow match {
       case None => 0.01
       case Some(_) =>
-        val validTrades = transactionLog.trades.filter(trade =>
-          trade.time.isAfter(virtualTime.minusNanos(_tickLength.toNanos * ticks)))
+        val validTrades = transactionLog.trades.filter(
+          trade =>
+            trade.time.isAfter(
+              virtualTime.minusNanos(_tickLength.toNanos * ticks)))
 
         val prices = Range(0, ticks).map(n => {
           val time = windowCutoff.plusNanos(_tickLength.toNanos * n)
@@ -107,10 +122,12 @@ class OrderBook(val askSide: OrderBookSide,
     virtualTime = newTime
     askSide.step(newTime)
     bidSide.step(newTime)
-    logger.debug(virtualTime + " Bid size: " + bidSide.getActiveOrders.size)
-    logger.debug(virtualTime + " Bid volume: " + bidSide.getVolume)
-    logger.debug(virtualTime + " Ask size: " + askSide.getActiveOrders.size)
-    logger.debug(virtualTime + " Ask volume: " + askSide.getVolume)
+//    logger.debug(
+//      virtualTime + " Bid side orders: " + bidSide.getActiveOrders.size)
+//    logger.debug(virtualTime + " Bid volume: " + bidSide.getVolume)
+//    logger.debug(
+//      virtualTime + " Ask side orders: " + askSide.getActiveOrders.size)
+//    logger.debug(virtualTime + " Ask volume: " + askSide.getVolume)
   }
 
 }

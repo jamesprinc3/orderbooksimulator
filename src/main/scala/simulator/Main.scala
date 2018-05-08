@@ -46,12 +46,13 @@ object Main {
       val startTime = LocalDateTime.now()
       val traders = TraderFactory.getRandomTraders(1,
                                                    0,
-                                                   2,
+                                                   1,
                                                    10000,
                                                    1,
                                                    config.buyVolumeRatio,
+                                                   config.limitOrderRatio,
                                                    config.distributions)
-      val orderBook = OrderBookFactory.importOrderBook(config.orderBookPath)
+      val orderBook = OrderBookFactory.importOrderBook(config.orderBookPath, startTime)
       val simulator =
         new DiscreteEventSimulator(startTime,
                                    startTime.plusNanos((300 * 1e9).toLong),
@@ -62,7 +63,7 @@ object Main {
 
       simulator.run()
 
-//        logger.debug(orderBook.transactionLog.toString)
+      logger.debug(orderBook.transactionLog.toString)
 
       val sim_t1 = System.nanoTime()
       logger.debug(

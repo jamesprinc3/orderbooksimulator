@@ -28,7 +28,7 @@ class BestPriceRateTrader(side: Side.Value,
 
       val interval = new LogNormal(0.12, 1.22).sample()
 
-      (time.plusNanos((interval * 1e6).toLong), this, orderBook, LimitOrder(side, this, price, size))
+      (time.plusNanos((interval * 1e6).toLong), this, orderBook, LimitOrder(time.plusNanos((interval * 1e6).toLong), side, this, price, size))
     })
 
     eventsToSubmit
