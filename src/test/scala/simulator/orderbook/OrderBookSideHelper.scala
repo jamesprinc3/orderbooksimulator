@@ -2,19 +2,20 @@ package simulator.orderbook
 
 import java.time.LocalDateTime
 
-import simulator.TestConstants
+import simulator.events.OrderBookEntry
+import simulator.{Side, TestConstants}
 import simulator.order.Order
 
 object OrderBookSideHelper {
   // TODO: unify these two methods?
   def getAskSide(orders: List[Order] = List()): OrderBookSide = {
     val orderBookEntries = getOrderBookEntries(orders)
-    new OrderBookSide(OrderBookSideType.Ask, orderBookEntries)
+    new OrderBookSide(Side.Ask, orderBookEntries)
   }
 
   def getBidSide(orders: List[Order] = List()): OrderBookSide = {
     val orderBookEntries = getOrderBookEntries(orders)
-    new OrderBookSide(OrderBookSideType.Bid, orderBookEntries)
+    new OrderBookSide(Side.Bid, orderBookEntries)
   }
 
   private def getOrderBookEntries(orders: List[Order]) = {

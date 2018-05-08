@@ -35,7 +35,7 @@ class TimeSliceSimulator(startTime: LocalDateTime,
     // Update the time that each trader sees, get the events that each traders wants to do
     val events = traders.flatMap(_.step(time, orderBooks))
     // Submit these orders to the correct OrderBook
-    events.foreach(event => event._3.submitOrder(event._2, event._4))
+    events.foreach(event => event._3.submitOrder(event._4))
 
     elapsedTimeSteps += 1
   }

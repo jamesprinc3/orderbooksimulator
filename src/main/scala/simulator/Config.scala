@@ -1,6 +1,7 @@
 package simulator
 
 import breeze.stats.distributions._
+import ch.qos.logback.classic.Level
 import com.typesafe.scalalogging.Logger
 import spray.json._
 
@@ -8,6 +9,7 @@ import scala.io.Source
 
 case class Config(numSimulations: Int = 1,
                   parallel: Boolean = false,
+                  logLevel: Level,
                   simRoot: String = "",
                   orderBookPath: String = "",
                   buyOrderRatio: Double = 0.5,
@@ -18,15 +20,18 @@ case class Config(numSimulations: Int = 1,
 object Config {
   def init(numSimulations: Int,
            parallel: Boolean,
+           logLevelStr: String,
            simRootPath: String,
            paramsPath: String,
            orderBookPath: String): Config = {
+    val logLevel = ch.qos.logback.classic.Level.toLevel(logLevelStr)
     val distributions = parseDistributions(paramsPath)
     val buyOrderRatio = getBuyOrderRatio(paramsPath)
     val buyVolumeRatio = getBuyVolumeRatio(paramsPath)
 
     Config(numSimulations,
            parallel,
+           logLevel,
            simRootPath,
            orderBookPath,
            buyOrderRatio,
@@ -126,8 +131,6 @@ object Config {
       .asJsObject
       .fields
       .map(kv => (kv._1, kv._2.convertTo[TransformedDistr]))
-    println(distributions)
-    //.convertTo[Map[String, TransformedDistr]]
 
     distributions
   }

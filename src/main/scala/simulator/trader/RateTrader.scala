@@ -1,6 +1,6 @@
 package simulator.trader
 
-import simulator.order.OrderType
+import simulator.Side
 
 // TODO: virtual clock?
 /** A Trader which submits orders at a given rate
@@ -8,7 +8,7 @@ import simulator.order.OrderType
   * @param rate mean orders per second
   * @param traderParams parameters to pass to parent class
   */
-abstract class RateTrader(orderType: OrderType.Value,
+abstract class RateTrader(orderType: Side.Value,
                           rate: Int,
                           traderParams: TraderParams)
     extends Trader(traderParams) {

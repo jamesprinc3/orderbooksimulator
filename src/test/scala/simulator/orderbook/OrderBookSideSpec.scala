@@ -3,8 +3,9 @@ package simulator.orderbook
 import java.time.LocalDateTime
 
 import org.scalatest._
-import simulator.TestConstants
-import simulator.order.{Order, OrderType}
+import simulator.events.OrderBookEntry
+import simulator.{Side, TestConstants}
+import simulator.order.{Order, Side}
 import simulator.trader.{TestTrader, TraderParams}
 
 class OrderBookSideSpec extends FlatSpec {
@@ -18,20 +19,20 @@ class OrderBookSideSpec extends FlatSpec {
   val bestBuyPrice = 101
   val bestSellPrice = 99
   val standardOrderSize = 10
-  val basicBuyOrder = OrderBookEntry(OrderType.Buy,
+  val basicBuyOrder = OrderBookEntry(Side.Buy,
                                      trader,
                                      TestConstants.minOrderIndex,
                                      LocalDateTime.now(),
                                      bestBuyPrice,
                                      standardOrderSize)
-  val basicSellOrder = OrderBookEntry(OrderType.Sell,
+  val basicSellOrder = OrderBookEntry(Side.Sell,
                                       trader,
                                       TestConstants.minOrderIndex,
                                       LocalDateTime.now(),
                                       bestSellPrice,
                                       standardOrderSize)
   def singularOrderBookSide: OrderBookSide =
-    new OrderBookSide(OrderBookSideType.Bid, List(basicBuyOrder))
+    new OrderBookSide(Side.Bid, List(basicBuyOrder))
 
   //------- addLimitOrder -------
 
@@ -54,7 +55,7 @@ class OrderBookSideSpec extends FlatSpec {
   it should "assign correct priority due to price (two orders)" in {
     val orderBookSide = emptyOrderBookSide
 
-    val higherPricedOrder = OrderBookEntry(OrderType.Buy,
+    val higherPricedOrder = OrderBookEntry(Side.Buy,
                                            trader,
                                            TestConstants.minOrderIndex + 1,
                                            LocalDateTime.now(),
@@ -71,7 +72,7 @@ class OrderBookSideSpec extends FlatSpec {
     val orderBookSide = emptyOrderBookSide
 
     val orderWithLaterArrivalTime =
-      OrderBookEntry(OrderType.Buy,
+      OrderBookEntry(Side.Buy,
                      trader,
                      TestConstants.minOrderIndex + 1,
                      LocalDateTime.now(),
@@ -97,7 +98,7 @@ class OrderBookSideSpec extends FlatSpec {
     val orderBookSide = emptyOrderBookSide
 
     orderBookSide.addLimitOrder(basicBuyOrder)
-    val sellOrder = OrderBookEntry(OrderType.Sell,
+    val sellOrder = OrderBookEntry(Side.Sell,
                                    trader,
                                    TestConstants.minOrderIndex,
                                    LocalDateTime.now(),
@@ -115,7 +116,7 @@ class OrderBookSideSpec extends FlatSpec {
     val orderBookSide = emptyOrderBookSide
 
     orderBookSide.addLimitOrder(basicBuyOrder)
-    val sellOrder = OrderBookEntry(OrderType.Sell,
+    val sellOrder = OrderBookEntry(Side.Sell,
                                    trader,
                                    TestConstants.minOrderIndex,
                                    LocalDateTime.now(),
@@ -132,7 +133,7 @@ class OrderBookSideSpec extends FlatSpec {
     val orderBookSide = emptyOrderBookSide
 
     orderBookSide.addLimitOrder(basicBuyOrder)
-    val sellOrder = OrderBookEntry(OrderType.Sell,
+    val sellOrder = OrderBookEntry(Side.Sell,
                                    trader,
                                    TestConstants.minOrderIndex,
                                    LocalDateTime.now(),
@@ -154,7 +155,7 @@ class OrderBookSideSpec extends FlatSpec {
     val bestPrice = 100
     val orders = Range(0, 3)
       .map(x => {
-        Order(OrderType.Buy, bestPrice, 10)
+        Order(Side.Buy, bestPrice, 10)
       })
       .toList
     val orderBookSide = OrderBookSideHelper.getBidSide(orders)
@@ -166,7 +167,7 @@ class OrderBookSideSpec extends FlatSpec {
     val bestPrice = 100
     val orders = Range(0, 3)
       .map(x => {
-        Order(OrderType.Buy, bestPrice + x, 10)
+        Order(Side.Buy, bestPrice + x, 10)
       })
       .toList
     val orderBookSide = OrderBookSideHelper.getBidSide(orders)

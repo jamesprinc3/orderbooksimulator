@@ -4,8 +4,7 @@ import java.time.LocalDateTime
 
 import breeze.stats.distributions.{ContinuousDistr, Exponential, LogNormal, RandBasis}
 import com.typesafe.scalalogging.Logger
-import simulator.TransformedDistr
-import simulator.order.OrderType
+import simulator.{Side, TransformedDistr}
 
 import scala.util.Random
 
@@ -20,9 +19,9 @@ object TraderFactory {
     val sellParams = TraderParams(18, 100, 1)
 
     val buyTrader =
-      new BestPriceRateTrader(OrderType.Buy, 100, startTime, buyParams)
+      new BestPriceRateTrader(Side.Bid, 100, startTime, buyParams)
     val sellTrader =
-      new BestPriceRateTrader(OrderType.Sell, 100, startTime, sellParams)
+      new BestPriceRateTrader(Side.Ask, 100, startTime, sellParams)
 
     List(buyTrader, sellTrader)
   }

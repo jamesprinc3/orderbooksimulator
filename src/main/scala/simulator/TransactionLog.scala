@@ -4,8 +4,7 @@ import java.io.File
 import java.nio.file.{Files, Path, Paths}
 
 import com.github.tototoshi.csv.CSVWriter
-import simulator.order.{Cancel, Trade}
-import simulator.orderbook.OrderBookEntry
+import simulator.events.{Cancel, OrderBookEntry, Trade}
 
 class TransactionLog() {
 
@@ -32,8 +31,8 @@ class TransactionLog() {
       List("time", "side", "trader_id", "order_id", "price", "size")
     val orderData: Seq[Seq[String]] = orders.map(
       order =>
-        Seq(order.arrivalTime.toString,
-            order.orderType.toString.toLowerCase(),
+        Seq(order.time.toString,
+            order.side.toString.toLowerCase(),
             order.trader.id.toString,
             order.orderId.toString,
             order.price.toString,
@@ -65,8 +64,8 @@ class TransactionLog() {
     val cancelData: Seq[Seq[String]] = cancels.map(
       cancel => {
         Seq(cancel.time.toString,
-          cancel.order.arrivalTime.toString,
-          cancel.order.orderType.toString.toLowerCase,
+          cancel.order.time.toString,
+          cancel.order.side.toString.toLowerCase,
           cancel.order.trader.id.toString,
           cancel.order.orderId.toString,
           cancel.order.price.toString,

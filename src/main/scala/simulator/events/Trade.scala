@@ -1,4 +1,4 @@
-package simulator.order
+package simulator.events
 
 import java.time.LocalDateTime
 

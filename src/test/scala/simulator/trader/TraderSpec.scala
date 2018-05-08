@@ -4,8 +4,8 @@ import java.time.LocalDateTime
 
 import org.scalatest.FlatSpec
 import simulator.TestConstants
-import simulator.order.{Order, OrderType, Trade}
-import simulator.orderbook.OrderBookEntry
+import simulator.events.{OrderBookEntry, Trade}
+import simulator.order.{Order, Side}
 
 class TraderSpec extends FlatSpec {
 
@@ -14,14 +14,14 @@ class TraderSpec extends FlatSpec {
   val standardPrice = 1
   val standardOrderSize = 2
 
-  val basicBuyOrder = OrderBookEntry(OrderType.Buy,
+  val basicBuyOrder = OrderBookEntry(Side.Bid,
                                      testTrader(),
                                      TestConstants.minOrderIndex,
                                      LocalDateTime.now(),
                                      standardPrice,
                                      standardOrderSize)
 
-  val basicSellOrder = OrderBookEntry(OrderType.Sell,
+  val basicSellOrder = OrderBookEntry(Side.Ask,
                                       testTrader(),
                                       TestConstants.minOrderIndex,
                                       LocalDateTime.now(),
@@ -115,7 +115,7 @@ class TraderSpec extends FlatSpec {
   "cancelOrder" should "update balance correctly on buy order" in {
     val trader = testTrader()
 
-    val order = OrderBookEntry(OrderType.Buy, null, 0, null, 1, 2)
+    val order = OrderBookEntry(Side.Bid, null, 0, null, 1, 2)
     trader.cancelOrder(order)
 
     assert(trader.getBalance == initialBalance + 2)
@@ -124,7 +124,7 @@ class TraderSpec extends FlatSpec {
   it should "not update holdings on buy order" in {
     val trader = testTrader()
 
-    val order = OrderBookEntry(OrderType.Buy, null, 0, null, 1, 2)
+    val order = OrderBookEntry(Side.Bid, null, 0, null, 1, 2)
     trader.cancelOrder(order)
 
     assert(trader.getHoldings == initialHoldings)
@@ -133,7 +133,7 @@ class TraderSpec extends FlatSpec {
   it should "update holdings correctly on sell order" in {
     val trader = testTrader()
 
-    val order = OrderBookEntry(OrderType.Sell, null, 0, null, 1, 2)
+    val order = OrderBookEntry(Side.Ask, null, 0, null, 1, 2)
     trader.cancelOrder(order)
 
     assert(trader.getHoldings == initialHoldings + 2)
@@ -142,7 +142,7 @@ class TraderSpec extends FlatSpec {
   it should "not update balance on sell order" in {
     val trader = testTrader()
 
-    val order = OrderBookEntry(OrderType.Sell, null, 0, null, 1, 2)
+    val order = OrderBookEntry(Side.Ask, null, 0, null, 1, 2)
     trader.cancelOrder(order)
 
     assert(trader.getBalance == initialBalance)

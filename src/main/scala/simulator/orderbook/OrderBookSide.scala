@@ -1,53 +1,51 @@
 package simulator.orderbook
 
+import java.time.LocalDateTime
+
 import com.typesafe.scalalogging.Logger
-import simulator.order.{OrderType, Trade}
+import simulator.Side
+import simulator.events.{OrderBookEntry, Trade}
+import simulator.order.{LimitOrder, MarketOrder, Order}
+import simulator.orderbook.priority.Priority
+import simulator.trader.Trader
 
 import scala.collection.mutable
 import util.control.Breaks._
 
-object OrderBookSideType extends Enumeration {
-  val Bid, Ask = Value
-}
-
-class OrderBookSide(sideType: OrderBookSideType.Value,
+class OrderBookSide(side: Side.Value,
+                    priority: Priority,
                     orders: List[OrderBookEntry] = List()) {
 
   private val logger = Logger(this.getClass)
+  private var virtualTime = LocalDateTime.now()
+  private implicit val ordering = priority.ordering
+  private var _orderId = side match {
+    case Side.Bid => 0
+    case Side.Ask => 0
+  }
 
-  // TODO: match on simulator.order book type?
-  implicit val ordering: Ordering[OrderBookEntry] =
-    (x: OrderBookEntry, y: OrderBookEntry) => {
-      var res = 0
+  private def getOrderID: Int = {
+    _orderId += 1
+    _orderId
+  }
 
-      // Assume it's ask side first
-      if (x.price == y.price) {
-        if (x.arrivalTime.isBefore(y.arrivalTime)) {
-          res = 1
-        } else if (y.arrivalTime.isBefore(x.arrivalTime)) {
-          res = -1
-        }
-      } else if (x.price > y.price) {
-        res = 1
-      } else if (x.price < y.price) {
-        res = -1
-      }
+  def step(newTime: LocalDateTime): Unit = {
+    virtualTime = newTime
+  }
 
-      // But if it's Bid side, just reverse the sign
-      if (sideType == OrderBookSideType.Bid) {
-        res *= -1
-      }
-
-      if (res == 0) {
-        if (x.orderId < y.orderId) {
-          res = 1
-        } else if (x.orderId > y.orderId) {
-          res = -1
-        }
-      }
-
-      res
+  def submitOrder(order: Order): Unit = {
+    if (order.side != side) {
+      throw new IllegalAccessError(
+        "Order side is " + order.side + " should be " + side)
     }
+
+    order match {
+      case LimitOrder(_, trader, price, size) =>
+        addLimitOrder(trader, price, size)
+      case MarketOrder(_, trader, size) =>
+        addMarketOrder(trader, size)
+    }
+  }
 
   private var activeOrders = mutable.TreeSet[OrderBookEntry]().++(orders)
 
@@ -58,128 +56,210 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
   // TODO: Error handling
   // TODO: is adding an order with the same ID as an existing order a fail?
   // TODO: split the order handling off into a different class?
-  def addLimitOrder(order: OrderBookEntry): Unit = {
-    // Need to check that if we're Bid side then we're getting a buy simulator.order here
-    sideType match {
-      case OrderBookSideType.Bid =>
-        if (order.orderType == OrderType.Sell) {
-          logger.error("Expected simulator.order type Buy, but was Sell")
-          return
-        }
-      case OrderBookSideType.Ask =>
-        if (order.orderType == OrderType.Buy) {
-          logger.error("Expected simulator.order type Sell, but was Buy")
-          return
-        }
-    }
+  def addLimitOrder(trader: Trader, price: Double, size: Double): Unit = {
+    val entry =
+      OrderBookEntry(side, trader, getOrderID, virtualTime, price, size)
 
-    activeOrders.+=(order)
+    activeOrders.+=(entry)
+    trader.updateState(entry)
   }
+
+//  def addLimitOrder(order: OrderBookEntry): Unit = {
+//    // Need to check that if we're Bid side then we're getting a buy simulator.order here
+//    sideType match {
+//      case Side.Bid =>
+//        if (order.side == Side.Sell) {
+//          logger.error("Expected simulator.order type Buy, but was Sell")
+//          return
+//        }
+//      case Side.Ask =>
+//        if (order.side == Side.Buy) {
+//          logger.error("Expected simulator.order type Sell, but was Buy")
+//          return
+//        }
+//    }
+//
+//    activeOrders.+=(order)
+//  }
 
   // TODO: Error handling
   // TODO: Do market orders just have a size, rather than a price?
   // TODO: Add an ID in here too? I think it makes sense to have that in the transaction log!
   /**
-    * @param incomingOrder The order which we want to match on the market
     * @return None if the order was matched in its entirety.
     *         Some(order) if we were unable to match the simulator.order fully, in this situation the simulator.order book can
     *         choose whether to re-enter this as a limit simulator.order.
     */
-  def addMarketOrder(incomingOrder: OrderBookEntry)
-    : (Option[List[Trade]], Option[OrderBookEntry]) = {
-    // Bid side will accept a sell simulator.order here and vice versa
-    sideType match {
-      case OrderBookSideType.Bid =>
-        if (incomingOrder.orderType == OrderType.Buy) {
-          logger.error("Expected simulator.order type Sell, but was Buy")
-          return (None, Some(incomingOrder))
-        }
-      case OrderBookSideType.Ask =>
-        if (incomingOrder.orderType == OrderType.Sell) {
-          logger.error("Expected simulator.order type Buy, but was Sell")
-          return (None, Some(incomingOrder))
-        }
-    }
-
+  def addMarketOrder(
+      trader: Trader,
+      size: Double): (Option[List[Trade]], Option[OrderBookEntry]) = {
     val iter = activeOrders.iterator
-    var mutableIncomingOrder = incomingOrder.copy()
     var openOrder: OrderBookEntry = null
+    var remainingSize = size
     var tradesThatHappened: List[Trade] = List[Trade]()
-    while (iter.hasNext && mutableIncomingOrder.size > 0) {
+    while (iter.hasNext && size > 0) {
       openOrder = iter.next()
 
       breakable {
-        if (openOrder.trader.id == mutableIncomingOrder.trader.id) {
+        if (openOrder.trader.id == trader.id) {
           break
         } else {
-          var shouldMatch = false
-          sideType match {
-            case OrderBookSideType.Bid =>
-              shouldMatch = openOrder.price >= mutableIncomingOrder.price
-            case OrderBookSideType.Ask =>
-              shouldMatch = openOrder.price <= mutableIncomingOrder.price
-          }
 
-          if (shouldMatch) {
-            val trade = reconcile(openOrder, mutableIncomingOrder)
-            tradesThatHappened = tradesThatHappened ++ List(trade)
-            // TODO: perhaps move this logic into the reconcile function?
-            activeOrders.remove(openOrder)
-            mutableIncomingOrder = mutableIncomingOrder.copy(size = mutableIncomingOrder.size - openOrder.size)
-          }
+          val trade = reconcile(openOrder, trader, remainingSize)
+          tradesThatHappened = tradesThatHappened ++ List(trade)
+          activeOrders.remove(openOrder)
+          remainingSize -= openOrder.size
         }
       }
     }
 
-    if (mutableIncomingOrder.size > 0) {
-      // Return the partially matched order (and the orderbook may reinstate it as a limit order on the other side of the book)
-      val partialIncomingOrder = incomingOrder.copy(size = mutableIncomingOrder.size)
-      return (Some(tradesThatHappened), Some(partialIncomingOrder))
+    if (remainingSize > 0) {
+      // We have run out of active orders on this side of the book, which is pretty bad news
+      throw new IllegalStateException(
+        "0 orders remain on the " + side + " side")
     }
 
-    if (mutableIncomingOrder.size < 0) {
+    if (remainingSize < 0) {
       // Re-add the partially matched open order to this OrderBookSide
-      val partialOpenOrder = openOrder.copy(size = -1 * mutableIncomingOrder.size)
-      addLimitOrder(partialOpenOrder)
+      val newPartialOrder = openOrder.copy(size = -1 * remainingSize)
+      addLimitOrder(openOrder.trader, openOrder.price, openOrder.size)
+      (Some(tradesThatHappened), Some(newPartialOrder))
+    } else {
+      (Some(tradesThatHappened), None)
     }
-
-    (Some(tradesThatHappened), None)
   }
 
+//  def addMarketOrder(incomingOrder: OrderBookEntry)
+//    : (Option[List[Trade]], Option[OrderBookEntry]) = {
+//    // Bid side will accept a sell simulator.order here and vice versa
+//    side match {
+//      case Side.Bid =>
+//        if (incomingOrder.side == Side.Buy) {
+//          logger.error("Expected simulator.order type Sell, but was Buy")
+//          return (None, Some(incomingOrder))
+//        }
+//      case Side.Ask =>
+//        if (incomingOrder.side == Side.Sell) {
+//          logger.error("Expected simulator.order type Buy, but was Sell")
+//          return (None, Some(incomingOrder))
+//        }
+//    }
+//
+//    val iter = activeOrders.iterator
+//    var mutableIncomingOrder = incomingOrder.copy()
+//    var openOrder: OrderBookEntry = null
+//    var tradesThatHappened: List[Trade] = List[Trade]()
+//    while (iter.hasNext && mutableIncomingOrder.size > 0) {
+//      openOrder = iter.next()
+//
+//      breakable {
+//        if (openOrder.trader.id == mutableIncomingOrder.trader.id) {
+//          break
+//        } else {
+//          var shouldMatch = false
+//          side match {
+//            case Side.Bid =>
+//              shouldMatch = openOrder.price >= mutableIncomingOrder.price
+//            case Side.Ask =>
+//              shouldMatch = openOrder.price <= mutableIncomingOrder.price
+//          }
+//
+//          if (shouldMatch) {
+//            val trade = reconcile(openOrder, mutableIncomingOrder)
+//            tradesThatHappened = tradesThatHappened ++ List(trade)
+//            // TODO: perhaps move this logic into the reconcile function?
+//            activeOrders.remove(openOrder)
+//            mutableIncomingOrder = mutableIncomingOrder.copy(size = mutableIncomingOrder.size - openOrder.size)
+//          }
+//        }
+//      }
+//    }
+//
+//    if (mutableIncomingOrder.size > 0) {
+//      // Return the partially matched order (and the orderbook may reinstate it as a limit order on the other side of the book)
+//      val partialIncomingOrder = incomingOrder.copy(size = mutableIncomingOrder.size)
+//      return (Some(tradesThatHappened), Some(partialIncomingOrder))
+//    }
+//
+//    if (mutableIncomingOrder.size < 0) {
+//      // Re-add the partially matched open order to this OrderBookSide
+//      val partialOpenOrder = openOrder.copy(size = -1 * mutableIncomingOrder.size)
+//      addLimitOrder(partialOpenOrder)
+//    }
+//
+//    (Some(tradesThatHappened), None)
+//  }
+
   protected[orderbook] def reconcile(openOrder: OrderBookEntry,
-                                     incomingOrder: OrderBookEntry): Trade = {
+                                     trader: Trader,
+                                     remainingSize: Double): Trade = {
     val taker = openOrder.trader
-    val maker = incomingOrder.trader
-    val trade = sideType match {
-      case OrderBookSideType.Bid =>
-        // TODO: LocalDateTime needs to change to something more meaningful
-        Trade(incomingOrder.arrivalTime,
+    val maker = trader
+    val orderId = getOrderID
+    val trade = side match {
+      case Side.Bid =>
+        Trade(virtualTime,
               taker.id,
               openOrder.orderId,
               maker.id,
-              incomingOrder.orderId,
+              orderId,
               openOrder.price,
-              Math.min(incomingOrder.size, openOrder.size))
-      case OrderBookSideType.Ask =>
-        Trade(incomingOrder.arrivalTime,
+              Math.min(remainingSize, openOrder.size))
+      case Side.Ask =>
+        Trade(virtualTime,
               maker.id,
-              incomingOrder.orderId,
+              orderId,
               taker.id,
               openOrder.orderId,
               openOrder.price,
-              Math.min(incomingOrder.size, openOrder.size))
+              Math.min(remainingSize, openOrder.size))
     }
 
-//    try {
-      maker.updateState(trade)
-      taker.updateState(trade)
-//    } catch {
-//      case e: IllegalStateException =>
-//      case e                        => logger.error(e.toString)
-//    }
+    //    try {
+    maker.updateState(trade)
+    taker.updateState(trade)
+    //    } catch {
+    //      case e: IllegalStateException =>
+    //      case e                        => logger.error(e.toString)
+    //    }
 
     trade
   }
+
+//  protected[orderbook] def reconcile(openOrder: OrderBookEntry,
+//                                     incomingOrder: OrderBookEntry): Trade = {
+//    val taker = openOrder.trader
+//    val maker = incomingOrder.trader
+//    val trade = side match {
+//      case Side.Bid =>
+//        // TODO: LocalDateTime needs to change to something more meaningful
+//        Trade(incomingOrder.time,
+//              taker.id,
+//              openOrder.orderId,
+//              maker.id,
+//              incomingOrder.orderId,
+//              openOrder.price,
+//              Math.min(incomingOrder.size, openOrder.size))
+//      case Side.Ask =>
+//        Trade(incomingOrder.time,
+//              maker.id,
+//              incomingOrder.orderId,
+//              taker.id,
+//              openOrder.orderId,
+//              openOrder.price,
+//              Math.min(incomingOrder.size, openOrder.size))
+//    }
+//
+////    try {
+//      maker.updateState(trade)
+//      taker.updateState(trade)
+////    } catch {
+////      case e: IllegalStateException =>
+////      case e                        => logger.error(e.toString)
+////    }
+//
+//    trade
+//  }
 
   private def getOrdersAtPrice(price: Double): Iterator[OrderBookEntry] = {
     activeOrders.filter(order => order.price == price).iterator
@@ -192,7 +272,7 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
 
   def cancelOrder(orderId: Int): Option[OrderBookEntry] = {
     activeOrders.find(order => order.orderId == orderId) match {
-      case None => return None
+      case None => None
       case Some(orderToCancel) =>
         orderToCancel.trader.cancelOrder(orderToCancel)
         activeOrders.remove(orderToCancel)
@@ -205,9 +285,9 @@ class OrderBookSide(sideType: OrderBookSideType.Value,
     val bestOrder = activeOrders.headOption
 
     if (bestOrder.isEmpty) {
-      return None
+      None
     } else {
-      return Some(bestOrder.get.price)
+      Some(bestOrder.get.price)
     }
   }
 

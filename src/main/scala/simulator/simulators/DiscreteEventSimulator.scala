@@ -66,7 +66,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
 //      logger.debug(eventQueue.toString())
 
       // Submit the order to the OrderBook that is given
-      event._3.submitOrder(event._2, event._4)
+      event._3.submitOrder(event._4)
 
       // Cancel a random order with some probability
       if (Random.nextDouble() < 0.9) {
@@ -86,7 +86,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
 //      }
     } catch {
       case e: IllegalStateException => throw e
-      case NonFatal(t) => logger.error("We haz error: " + t)
+//      case NonFatal(t) => logger.error("We haz error: " + t)
     }
 
 

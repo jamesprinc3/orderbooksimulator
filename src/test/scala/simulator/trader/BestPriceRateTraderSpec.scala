@@ -2,10 +2,10 @@ package simulator.trader
 
 import java.time.LocalDateTime
 
-import simulator.order.OrderType
-import simulator.orderbook.{OrderBook, OrderBookSide, OrderBookSideType, TestOrderBook}
+import simulator.order.Side
+import simulator.orderbook.{OrderBook, OrderBookSide, TestOrderBook}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec}
-import simulator.TestConstants
+import simulator.{Side, TestConstants}
 
 class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
 
@@ -17,7 +17,7 @@ class BestPriceRateTraderSpec extends FlatSpec with BeforeAndAfterEach {
   override def beforeEach(): Unit = {
     orderBook = TestOrderBook.getEmptyOrderBook
     traderParams = TraderParams(1, 10, 10)
-    trader = new BestPriceRateTrader(OrderType.Buy, 1, startTime, traderParams)
+    trader = new BestPriceRateTrader(Side.Bid, 1, startTime, traderParams)
   }
 
   // TODO: the tests in this class feel a bit flimsy, we're assuming the simulator.order IDs :/

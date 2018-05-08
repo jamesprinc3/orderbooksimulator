@@ -4,9 +4,10 @@ import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
-import simulator.TransactionLog
-import simulator.order.{Order, OrderType, Trade}
-import simulator.orderbook.{OrderBook, OrderBookEntry}
+import simulator.{Side, TransactionLog}
+import simulator.events.{OrderBookEntry, Trade}
+import simulator.order.Order
+import simulator.orderbook.OrderBook
 
 // TODO: simulator.trader factory?
 abstract class Trader(traderParams: TraderParams) {
@@ -47,12 +48,13 @@ abstract class Trader(traderParams: TraderParams) {
           openOrders += order.copy(size = order.size - trade.size)
         }
       case None =>
-        logger.debug("Illegal State!")
-        logger.debug("trader " + this.id.toString + " " + openOrders.toString())
-        logger.debug(trade.toString)
-        logger.debug(tradedOrderId.toString)
-        logger.debug(this.id.toString)
-        throw new IllegalStateException()
+        // TODO: we presume for now that this trader must have been the maker, but this feels quite flimsy and we need to be more certain
+//        logger.debug("Illegal State!")
+//        logger.debug("trader " + this.id.toString + " " + openOrders.toString())
+//        logger.debug(trade.toString)
+//        logger.debug(tradedOrderId.toString)
+//        logger.debug(this.id.toString)
+//        throw new IllegalStateException()
     }
   }
 
@@ -63,10 +65,10 @@ abstract class Trader(traderParams: TraderParams) {
     openOrders += order
 
     val diff = order.price * order.size
-    order.orderType match {
-      case OrderType.Buy =>
+    order.side match {
+      case Side.Bid =>
         balance -= diff
-      case OrderType.Sell =>
+      case Side.Ask =>
         holdings -= order.size
     }
 //    logger.debug("UPDATE ORDER - trader " + this.id.toString + " " + openOrders.toString())
@@ -77,10 +79,10 @@ abstract class Trader(traderParams: TraderParams) {
     openOrders -= order
 
     val diff = order.price * order.size
-    order.orderType match {
-      case OrderType.Buy =>
+    order.side match {
+      case Side.Bid =>
         balance += diff
-      case OrderType.Sell =>
+      case Side.Ask =>
         holdings += order.size
     }
 //    logger.debug("CANCEL ORDER - trader " + this.id.toString + " " + openOrders.toString())

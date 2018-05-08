@@ -1,14 +1,17 @@
 package simulator.orderbook
 
 import org.scalatest._
-import simulator.order.{Order, OrderType}
+import simulator.order.{Order, Side}
+import simulator.trader.HandsOffTrader
 
 class OrderBookFactorySpec extends FlatSpec {
   private val buyPrice = 9
   private val sellPrice = 11
 
-  private val buyOrders = Range(0,5).map(_ => Order(OrderType.Buy, buyPrice, 10)).toList
-  private val sellOrders = Range(0,5).map(_ => Order(OrderType.Sell, sellPrice, 10)).toList
+  private val buyOrders = Range(0,5).map(_ => Order(Side.Bid, buyPrice, 10)).toList
+  private val sellOrders = Range(0,5).map(_ => Order(Side.Ask, sellPrice, 10)).toList
+
+  private def handsOffTrader = new HandsOffTrader()
 
   "getOrderBook" should "give empty OrderBook when given no orders" in {
     val orderBook = OrderBookFactory.getOrderBook()
@@ -17,14 +20,14 @@ class OrderBookFactorySpec extends FlatSpec {
   }
 
   it should "give correct number of orders in OrderBook when given one buy order" in {
-    val buyOrder = Order(OrderType.Buy, buyPrice, 10)
+    val buyOrder = LimitOrder(Side.Bid, buyPrice, 10)
     val orderBook = OrderBookFactory.getOrderBook(List(buyOrder))
 
     assert(orderBook.getNumberOfOrders == 1)
   }
 
   it should "give correct number of orders in OrderBook when given one sell order" in {
-    val sellOrder = Order(OrderType.Sell, sellPrice, 10)
+    val sellOrder = Order(Side.Ask, sellPrice, 10)
     val orderBook = OrderBookFactory.getOrderBook(List(sellOrder))
 
     assert(orderBook.getNumberOfOrders == 1)

@@ -2,12 +2,12 @@ package simulator
 
 import java.time.LocalDateTime
 
-import ch.qos.logback.classic.{Level, Logger}
+import ch.qos.logback.classic.Logger
+import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 import simulator.orderbook.OrderBookFactory
 import simulator.simulators.DiscreteEventSimulator
 import simulator.trader.TraderFactory
-import com.typesafe.config.ConfigFactory
 
 import scala.reflect.io.Path
 
@@ -16,12 +16,14 @@ object Main {
   private val logger = com.typesafe.scalalogging.Logger(this.getClass)
 
   def main(args: Array[String]): Unit = {
+    val config = getConfig
+
     LoggerFactory
       .getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
       .asInstanceOf[Logger]
-      .setLevel(Level.INFO)
+      .setLevel(config.logLevel)
 
-    val config = getConfig()
+    logger.debug(config.toString)
 
     val simRoot = config.simRoot
     val simPath = Path(simRoot)
@@ -47,7 +49,7 @@ object Main {
                                                    2,
                                                    10000,
                                                    1,
-                                                   config.buyOrderRatio,
+                                                   1 - config.buyOrderRatio,
                                                    config.distributions)
       val orderBook = OrderBookFactory.importOrderBook(config.orderBookPath)
       val simulator =
@@ -78,14 +80,20 @@ object Main {
       s"Simulations took: " + ((prog_t1 - prog_t0) / 1e9) + " seconds")
   }
 
-  def getConfig(): Config = {
+  def getConfig: Config = {
     val conf = ConfigFactory.load()
     val numSimulations = conf.getInt("execution.numSimulations")
     val parallel = conf.getBoolean("execution.parallel")
+    val logLevel = conf.getString("execution.logLevel")
     val simRootPath = conf.getString("paths.simRoot")
     val paramsPath = conf.getString("paths.params")
     val orderBookPath = conf.getString("paths.orderbook")
 
-    Config.init(numSimulations, parallel, simRootPath, paramsPath, orderBookPath)
+    Config.init(numSimulations,
+                parallel,
+                logLevel,
+                simRootPath,
+                paramsPath,
+                orderBookPath)
   }
 }
