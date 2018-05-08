@@ -6,20 +6,32 @@ import spray.json._
 
 import scala.io.Source
 
-case class Config(simRoot: String = "",
+case class Config(numSimulations: Int = 1,
+                  parallel: Boolean = false,
+                  simRoot: String = "",
                   orderBookPath: String = "",
                   buyOrderRatio: Double = 0.5,
                   buyVolumeRatio: Double = 0.5,
                   distributions: Map[String, TransformedDistr] =
-                  Map[String, TransformedDistr]())
+                    Map[String, TransformedDistr]())
 
 object Config {
-  def init(simRootPath: String, paramsPath: String, orderBookPath: String): Config = {
+  def init(numSimulations: Int,
+           parallel: Boolean,
+           simRootPath: String,
+           paramsPath: String,
+           orderBookPath: String): Config = {
     val distributions = parseDistributions(paramsPath)
     val buyOrderRatio = getBuyOrderRatio(paramsPath)
     val buyVolumeRatio = getBuyVolumeRatio(paramsPath)
 
-    Config(simRootPath, orderBookPath, buyOrderRatio, buyVolumeRatio, distributions)
+    Config(numSimulations,
+           parallel,
+           simRootPath,
+           orderBookPath,
+           buyOrderRatio,
+           buyVolumeRatio,
+           distributions)
   }
 
   object DistJsonProtocol extends DefaultJsonProtocol {
@@ -103,7 +115,7 @@ object Config {
   }
 
   def parseDistributions(
-                          parametersPath: String): Map[String, TransformedDistr] = {
+      parametersPath: String): Map[String, TransformedDistr] = {
 
     val json = Source.fromFile(parametersPath).getLines.mkString("")
     val jsonAst = json.parseJson
