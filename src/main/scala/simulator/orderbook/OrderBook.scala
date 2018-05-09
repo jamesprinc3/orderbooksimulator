@@ -5,22 +5,22 @@ import java.time.LocalDateTime
 import com.typesafe.scalalogging.Logger
 import simulator.events.{Cancel, OrderBookEntry}
 import simulator.order.Order
-import simulator.{Side, TransactionLog}
+import simulator.{Side, Steppable, TransactionLog}
 
 import scala.concurrent.duration.Duration
 
 class OrderBook(val askSide: OrderBookSide,
                 val bidSide: OrderBookSide,
                 orders: List[Order] = List(),
-                val transactionLog: TransactionLog = new TransactionLog()) {
+                val transactionLog: TransactionLog = new TransactionLog())
+  // TODO: see if we can set this to some kind of default start time
+    extends Steppable(LocalDateTime.now()) {
 
   private val _tickLength = Duration.fromNanos(1e6)
-  // TODO: see if we can set this to some kind of default start time
-  private var virtualTime: LocalDateTime = LocalDateTime.now()
   // TODO: add minPrice / maxPrice?
   // Negative prices don't make sense anyway, so should probably put this in
 
-  orders.foreach(order => submitOrder(order, false))
+  orders.foreach(order => submitOrder(order, checkTime = false))
 
   private val logger = Logger(this.getClass)
 
@@ -62,7 +62,7 @@ class OrderBook(val askSide: OrderBookSide,
 
     trades match {
       case Some(ts) => ts.foreach(transactionLog.addTrade)
-      case None =>
+      case None     =>
     }
 
   }
@@ -118,7 +118,7 @@ class OrderBook(val askSide: OrderBookSide,
     }
   }
 
-  def step(newTime: LocalDateTime): Unit = {
+  override def step(newTime: LocalDateTime): Unit = {
     virtualTime = newTime
     askSide.step(newTime)
     bidSide.step(newTime)

@@ -8,17 +8,15 @@ import simulator.trader.Trader
 
 import scala.concurrent.duration.Duration
 
-// TODO: make this into an interface?
 // TODO: better names for input args
 class TimeSliceSimulator(startTime: LocalDateTime,
                          private val increment: Duration,
                          private val timeSteps: Int,
                          traders: List[Trader],
                          orderBooks: List[OrderBook])
-    extends Simulator(traders, orderBooks) {
+    extends Simulator(startTime, traders, orderBooks) {
 
   private var elapsedTimeSteps = 0
-  private var time = startTime
 
   private val logger = Logger(this.getClass)
 
@@ -27,13 +25,13 @@ class TimeSliceSimulator(startTime: LocalDateTime,
   }
 
   override def updateState(): Unit = {
-    time = time.plusNanos(increment.toNanos)
-    logger.debug("UpdateState: " + elapsedTimeSteps + " time: " + time.toString)
+    step(virtualTime.plusNanos(increment.toNanos))
+    logger.debug("UpdateState: " + elapsedTimeSteps + " time: " + virtualTime.toString)
 
     // Update the time that each transaction log sees (note, this should have no side effects)
-    orderBooks.foreach(_.step(time))
+    orderBooks.foreach(_.step(virtualTime))
     // Update the time that each trader sees, get the events that each traders wants to do
-    val events = traders.flatMap(_.step(time, orderBooks))
+    val events = traders.flatMap(_.step(virtualTime, orderBooks))
     // Submit these orders to the correct OrderBook
     events.foreach(event => event._3.submitOrder(event._4))
 

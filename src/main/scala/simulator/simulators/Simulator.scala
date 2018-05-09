@@ -1,10 +1,17 @@
 package simulator.simulators
 
-import simulator.TransactionLog
+import java.time.LocalDateTime
+
+import simulator.{Steppable, TransactionLog}
 import simulator.orderbook.OrderBook
 import simulator.trader.Trader
 
-abstract class Simulator(traders: List[Trader], orderBooks: List[OrderBook]) {
+abstract class Simulator(startTime: LocalDateTime,
+                         traders: List[Trader],
+                         orderBooks: List[OrderBook])
+    extends Steppable(startTime) {
+
+//  protected var virtualTime: LocalDateTime = startTime
 
   def endCondition(): Boolean
 
@@ -19,7 +26,6 @@ abstract class Simulator(traders: List[Trader], orderBooks: List[OrderBook]) {
     while (!endCondition()) {
       updateState()
     }
-
 
   }
 

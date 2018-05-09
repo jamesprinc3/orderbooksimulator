@@ -18,9 +18,9 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
                              buyCancelRatio: Double,
                              traders: List[Trader],
                              orderBooks: List[OrderBook])
-    extends Simulator(traders, orderBooks) {
+    extends Simulator(startTime, traders, orderBooks) {
 
-  private var virtualTime = startTime
+
   implicit val localDateTimeOrdering: Ordering[LocalDateTime] =
     Ordering.by(_.toEpochSecond(ZoneOffset.UTC))
   // NOTE: when printing this queue, we don't see the elements in the order they will be dequeued
@@ -61,7 +61,8 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
         logger.error("Time Machine mode")
         throw new IllegalStateException("Time Machine mode")
       }
-      virtualTime = newTime
+//      virtualTime = newTime
+      step(newTime)
 
       // Update the time that each order book sees
       orderBooks.foreach(_.step(virtualTime))

@@ -3,7 +3,7 @@ package simulator.orderbook
 import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.Logger
-import simulator.Side
+import simulator.{Side, Steppable}
 import simulator.events.{OrderBookEntry, Trade}
 import simulator.order.{LimitOrder, MarketOrder, Order}
 import simulator.orderbook.priority.Priority
@@ -14,10 +14,9 @@ import util.control.Breaks._
 
 class OrderBookSide(side: Side.Value,
                     priority: Priority,
-                    orders: List[OrderBookEntry] = List()) {
+                    orders: List[OrderBookEntry] = List()) extends Steppable(LocalDateTime.now()) {
 
   private val logger = Logger(this.getClass)
-  private var virtualTime = LocalDateTime.now()
   private implicit val ordering = priority.ordering
   private var _orderId = side match {
     case Side.Bid => 0
@@ -27,10 +26,6 @@ class OrderBookSide(side: Side.Value,
   private def getOrderID: Int = {
     _orderId += 1
     _orderId
-  }
-
-  def step(newTime: LocalDateTime): Unit = {
-    virtualTime = newTime
   }
 
   def submitOrder(order: Order): Option[List[Trade]] = {

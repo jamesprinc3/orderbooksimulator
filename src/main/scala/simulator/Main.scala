@@ -1,5 +1,6 @@
 package simulator
 
+import java.io.File
 import java.time.LocalDateTime
 
 import ch.qos.logback.classic.Logger
@@ -16,7 +17,7 @@ object Main {
   private val logger = com.typesafe.scalalogging.Logger(this.getClass)
 
   def main(args: Array[String]): Unit = {
-    val config = getConfig
+    val config = getConfig(args.headOption)
 
     LoggerFactory
       .getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
@@ -44,15 +45,16 @@ object Main {
 
     simIndices.foreach(simulatorNumber => {
       val startTime = LocalDateTime.now()
-      val traders = TraderFactory.getRandomTraders(1,
-                                                   0,
-                                                   1,
-                                                   10000,
-                                                   1,
-                                                   config.buyVolumeRatio, // TODO: this should be the wrong metric...
-                                                   0.5,
-                                                   config.limitOrderRatio,
-                                                   config.distributions)
+      val traders = TraderFactory.getRandomTraders(
+        1,
+        0,
+        1,
+        10000,
+        1,
+        config.buyVolumeRatio, // TODO: this should be the wrong metric...
+        0.5,
+        config.limitOrderRatio,
+        config.distributions)
       val orderBook =
         OrderBookFactory.importOrderBook(config.orderBookPath, startTime)
       val simulator =
@@ -84,8 +86,18 @@ object Main {
       s"Simulations took: " + ((prog_t1 - prog_t0) / 1e9) + " seconds")
   }
 
-  def getConfig: Config = {
-    val conf = ConfigFactory.load()
+  def getConfig(pathOption: Option[String]): Config = {
+    println(pathOption)
+    val conf = pathOption match {
+      case None =>
+        ConfigFactory.load()
+      case Some(path) =>
+        val myConfigFile = new File(path)
+        val fileConfig =
+          ConfigFactory.parseFile(myConfigFile)
+        ConfigFactory.load(fileConfig)
+    }
+
     val numSimulations = conf.getInt("execution.numSimulations")
     val parallel = conf.getBoolean("execution.parallel")
     val logLevel = conf.getString("execution.logLevel")
