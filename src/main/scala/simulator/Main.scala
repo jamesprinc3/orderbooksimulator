@@ -34,7 +34,7 @@ object Main {
 
     val prog_t0 = System.nanoTime()
 
-    println(config.buyOrderRatio)
+    println(config)
 
     val simIndices = if (config.parallel) {
       Range(0, config.numSimulations).par
@@ -49,13 +49,16 @@ object Main {
                                                    1,
                                                    10000,
                                                    1,
-                                                   config.buyVolumeRatio,
+                                                   config.buyVolumeRatio, // TODO: this should be the wrong metric...
+                                                   0.5,
                                                    config.limitOrderRatio,
                                                    config.distributions)
-      val orderBook = OrderBookFactory.importOrderBook(config.orderBookPath, startTime)
+      val orderBook =
+        OrderBookFactory.importOrderBook(config.orderBookPath, startTime)
       val simulator =
         new DiscreteEventSimulator(startTime,
                                    startTime.plusNanos((300 * 1e9).toLong),
+                                   config.buyCancelRatio,
                                    traders,
                                    List(orderBook))
 

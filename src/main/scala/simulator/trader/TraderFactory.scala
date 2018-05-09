@@ -37,14 +37,15 @@ object TraderFactory {
   }
 
   def getRandomTraders(
-      orderProbability: Double,
-      cancelProbability: Double,
-      n: Int,
-      totalBalance: Double,
-      totalHoldings: Double,
-      buyRatio: Double,
-      limitOrderRatio: Double,
-      distributions: Map[String, TransformedDistr]): List[RandomTrader] = {
+                        orderProbability: Double,
+                        cancelProbability: Double,
+                        n: Int,
+                        totalBalance: Double,
+                        totalHoldings: Double,
+                        buyOrderRatio: Double,
+                        buyCancelRatio: Double,
+                        limitOrderRatio: Double,
+                        distributions: Map[String, TransformedDistr]): List[RandomTrader] = {
     Range(0, n)
       .map(x => {
         val traderParams = TraderParams(x,
@@ -82,7 +83,7 @@ object TraderFactory {
           sellPriceDistribution,
           buyOrderPriceCancellationDistribution,
           sellOrderPriceCancellationDistribution,
-          buyRatio,
+          buyOrderRatio,
           limitOrderRatio,
           limitOrderSizeDistribution,
           marketOrderSizeDistribution,

@@ -13,6 +13,7 @@ case class Config(numSimulations: Int = 1,
                   simRoot: String = "",
                   orderBookPath: String = "",
                   buyOrderRatio: Double = 0.5,
+                  buyCancelRatio: Double = 0.5,
                   buyVolumeRatio: Double = 0.5,
                   limitOrderRatio: Double = 0.99,
                   distributions: Map[String, TransformedDistr] =
@@ -33,6 +34,7 @@ object Config {
 
     val buyOrderRatio = getRatio(jsonAst, "buy_sell_order_ratio")
     val buyVolumeRatio = getRatio(jsonAst, "buy_sell_volume_ratio")
+    val buyCancelRatio = getRatio(jsonAst, "buy_sell_cancel_ratio")
     val limitOrderRatio = getRatio(jsonAst, "limit_market_order_ratio")
     val distributions = parseDistributions(jsonAst)
 
@@ -43,6 +45,7 @@ object Config {
            orderBookPath,
            buyOrderRatio,
            buyVolumeRatio,
+           buyCancelRatio,
            limitOrderRatio,
            distributions)
   }

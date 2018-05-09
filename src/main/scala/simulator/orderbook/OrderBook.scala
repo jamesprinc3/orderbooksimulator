@@ -25,7 +25,7 @@ class OrderBook(val askSide: OrderBookSide,
   private val logger = Logger(this.getClass)
 
   def getBidPrice: Double = {
-    bidSide.getBestPrice.getOrElse(Integer.MAX_VALUE / 2)
+    bidSide.getBestPrice.getOrElse(0)
   }
 
   protected[orderbook] def getBidSide: OrderBookSide = {
@@ -33,7 +33,7 @@ class OrderBook(val askSide: OrderBookSide,
   }
 
   def getAskPrice: Double = {
-    askSide.getBestPrice.getOrElse(0)
+    askSide.getBestPrice.getOrElse(Integer.MAX_VALUE / 2)
   }
 
   protected[orderbook] def getAskSide: OrderBookSide = {

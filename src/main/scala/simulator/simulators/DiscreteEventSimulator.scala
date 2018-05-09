@@ -15,6 +15,7 @@ import scala.util.control.NonFatal
 
 class DiscreteEventSimulator(startTime: LocalDateTime,
                              endTime: LocalDateTime,
+                             buyCancelRatio: Double,
                              traders: List[Trader],
                              orderBooks: List[OrderBook])
     extends Simulator(traders, orderBooks) {
@@ -69,7 +70,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
       event._3.submitOrder(event._4)
 
       // Cancel a random order with some probability
-      if (Random.nextDouble() < 0.99) {
+      if (Random.nextDouble() < 0.90) {
         cancelRandomOrder(event._3)
       }
 
@@ -90,8 +91,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
   }
 
   private def cancelRandomOrder(orderBook: OrderBook) = {
-    val buyRatio = 0.5
-    val isBuySide = Random.nextFloat() < buyRatio
+    val isBuySide = Random.nextFloat() < buyCancelRatio
     val validOrders = if (isBuySide) {
       orderBook.bidSide.getActiveOrders
     } else {
@@ -106,8 +106,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
         midPrice + sellOrderPriceCancellationDistribution.sample()
       }
 
-      orderBook.cancelOrder(
-        validOrders.minBy[Double](o => math.abs(o.price - targetPrice)).orderId)
+      orderBook.cancelOrder(validOrders.head.orderId)
     }
   }
 

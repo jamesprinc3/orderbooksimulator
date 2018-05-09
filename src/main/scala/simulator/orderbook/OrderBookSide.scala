@@ -66,12 +66,8 @@ class OrderBookSide(side: Side.Value,
   }
 
   // TODO: Error handling
-  // TODO: Do market orders just have a size, rather than a price?
-  // TODO: Add an ID in here too? I think it makes sense to have that in the transaction log!
   /**
-    * @return None if the order was matched in its entirety.
-    *         Some(order) if we were unable to match the simulator.order fully, in this situation the simulator.order book can
-    *         choose whether to re-enter this as a limit simulator.order.
+    * @return Potential list of trades that occurred to filled this market order
     */
   def addMarketOrder(
       trader: Trader,
@@ -98,13 +94,14 @@ class OrderBookSide(side: Side.Value,
 
     if (remainingSize > 0) {
       // We have run out of active orders on this side of the book, which is pretty bad news
-      logger.error("0 orders remain on the " + side + " side")
+      val errString = "0 orders remain on the " + side + " side"
+      logger.error(errString)
+      throw new IllegalStateException(errString)
     }
 
     if (remainingSize < 0) {
       // Re-add the partially matched open order to this OrderBookSide
-      val newPartialOrder = openOrder.copy(size = -1 * remainingSize)
-      addLimitOrder(openOrder.trader, openOrder.price, openOrder.size)
+      addLimitOrder(openOrder.trader, openOrder.price, -1 * remainingSize)
     }
     Some(tradesThatHappened)
   }
@@ -144,41 +141,6 @@ class OrderBookSide(side: Side.Value,
 
     trade
   }
-
-//  protected[orderbook] def reconcile(openOrder: OrderBookEntry,
-//                                     incomingOrder: OrderBookEntry): Trade = {
-//    val taker = openOrder.trader
-//    val maker = incomingOrder.trader
-//    val trade = side match {
-//      case Side.Bid =>
-//        // TODO: LocalDateTime needs to change to something more meaningful
-//        Trade(incomingOrder.time,
-//              taker.id,
-//              openOrder.orderId,
-//              maker.id,
-//              incomingOrder.orderId,
-//              openOrder.price,
-//              Math.min(incomingOrder.size, openOrder.size))
-//      case Side.Ask =>
-//        Trade(incomingOrder.time,
-//              maker.id,
-//              incomingOrder.orderId,
-//              taker.id,
-//              openOrder.orderId,
-//              openOrder.price,
-//              Math.min(incomingOrder.size, openOrder.size))
-//    }
-//
-////    try {
-//      maker.updateState(trade)
-//      taker.updateState(trade)
-////    } catch {
-////      case e: IllegalStateException =>
-////      case e                        => logger.error(e.toString)
-////    }
-//
-//    trade
-//  }
 
   private def getOrdersAtPrice(price: Double): Iterator[OrderBookEntry] = {
     activeOrders.filter(order => order.price == price).iterator
