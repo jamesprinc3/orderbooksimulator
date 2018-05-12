@@ -107,6 +107,11 @@ object Config {
               val ret = Pareto(scale, shape)
               scale = 1
               ret
+            case "laplace" =>
+              val ret = Laplace(loc, scale)
+              loc = 0
+              scale = 1
+              ret
           }
 
           new TransformedDistr(contDist, loc, scale)

@@ -7,22 +7,24 @@ import com.github.tototoshi.csv.CSVWriter
 import simulator.events.{Cancel, Trade}
 import simulator.order.Order
 
+import scala.collection.mutable.ListBuffer
+
 class TransactionLog() {
 
-  var trades: List[Trade] = List()
-  var orders: List[Order] = List()
-  var cancels: List[Cancel] = List()
+  var trades: ListBuffer[Trade] = ListBuffer()
+  var orders: ListBuffer[Order] = ListBuffer()
+  var cancels: ListBuffer[Cancel] = ListBuffer()
 
   def addTrade(trade: Trade): Unit = {
-    trades = trades ::: List(trade)
+    trades += trade
   }
 
   def addOrder(order: Order): Unit = {
-    orders = orders ::: List(order)
+    orders += order
   }
 
   def addCancel(cancel: Cancel): Unit = {
-    cancels = cancels ::: List(cancel)
+    cancels += cancel
   }
 
   def export(fileDir: String): Unit = {

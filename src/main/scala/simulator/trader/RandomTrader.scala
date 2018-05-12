@@ -59,10 +59,7 @@ class RandomTrader(orderProbability: Double,
 //    val priceSigma = 0.001 //k * 0.01 //orderBook.getVolatility(volatilityTicks)
     val midPrice = orderBook.getPrice
 
-    val interval = intervalDistribution.sample()
-    if (interval < 0) {
-      logger.error("interval is negative")
-    }
+    val interval = generateInterval(intervalDistribution)
     val orderTime = virtualTime.plusNanos((interval * 1e6).toLong)
 
     val side = if (Random.nextFloat() < buyRatio) {
@@ -109,6 +106,15 @@ class RandomTrader(orderProbability: Double,
     } else {
       size
     }
+  }
+
+  private def generateInterval(intervalDist: TransformedDistr): Double = {
+    var interval = intervalDistribution.sample()
+    while (interval < 0) {
+      interval = intervalDistribution.sample()
+    }
+
+    interval
   }
 
 

@@ -17,21 +17,22 @@ class OrderBookSide(side: Side.Value,
                     orders: List[OrderBookEntry] = List()) extends Steppable(LocalDateTime.now()) {
 
   private val logger = Logger(this.getClass)
-  private implicit val ordering = priority.ordering
+  private implicit val ordering: Ordering[OrderBookEntry] = priority.ordering
   private var _orderId = side match {
     case Side.Bid => 0
-    case Side.Ask => 0
+    case Side.Ask => 1
   }
 
   private def getOrderID: Int = {
-    _orderId += 1
+    _orderId += 2
     _orderId
   }
 
   def submitOrder(order: Order): Option[List[Trade]] = {
-    if (order.side != side) {
+    if (order.side == side && order.isInstanceOf[MarketOrder]
+    ||  order.side != side && order.isInstanceOf[LimitOrder]) {
       throw new IllegalAccessError(
-        "Order side is " + order.side + " should be " + side)
+        "Order side incompatible with this " + side)
     }
 
     order match {

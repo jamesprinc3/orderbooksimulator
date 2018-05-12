@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.Logger
 import simulator.events.{Cancel, OrderBookEntry}
-import simulator.order.Order
+import simulator.order.{LimitOrder, MarketOrder, Order}
 import simulator.{Side, Steppable, TransactionLog}
 
 import scala.concurrent.duration.Duration
@@ -55,9 +55,11 @@ class OrderBook(val askSide: OrderBookSide,
 
     transactionLog.addOrder(order)
     order.trader.updateState(order)
-    val trades = order.side match {
-      case Side.Bid => bidSide.submitOrder(order)
-      case Side.Ask => askSide.submitOrder(order)
+    val trades = (order.side, order) match {
+      case (Side.Bid, order: LimitOrder) => bidSide.submitOrder(order)
+      case (Side.Bid, order: MarketOrder) => askSide.submitOrder(order)
+      case (Side.Ask, order: LimitOrder) => askSide.submitOrder(order)
+      case (Side.Ask, order: MarketOrder) => bidSide.submitOrder(order)
     }
 
     trades match {

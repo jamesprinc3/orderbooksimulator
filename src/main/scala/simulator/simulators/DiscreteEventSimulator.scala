@@ -75,7 +75,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
         cancelRandomOrder(event._3)
       }
 
-      // Update the time that each trader sees and collate any orders sent back
+      // Update the time that the current sees and receives any orders to be scheduled
       val eventsToSubmit =
         event._2.step(virtualTime, orderBooks)
 
