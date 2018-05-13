@@ -14,7 +14,8 @@ import util.control.Breaks._
 
 class OrderBookSide(side: Side.Value,
                     priority: Priority,
-                    orders: List[OrderBookEntry] = List()) extends Steppable(LocalDateTime.now()) {
+                    orders: List[OrderBookEntry] = List())
+    extends Steppable(LocalDateTime.now()) {
 
   private val logger = Logger(this.getClass)
   private implicit val ordering: Ordering[OrderBookEntry] = priority.ordering
@@ -30,9 +31,8 @@ class OrderBookSide(side: Side.Value,
 
   def submitOrder(order: Order): Option[List[Trade]] = {
     if (order.side == side && order.isInstanceOf[MarketOrder]
-    ||  order.side != side && order.isInstanceOf[LimitOrder]) {
-      throw new IllegalAccessError(
-        "Order side incompatible with this " + side)
+        || order.side != side && order.isInstanceOf[LimitOrder]) {
+      throw new IllegalAccessError("Order side incompatible with this " + side)
     }
 
     order match {
@@ -65,9 +65,7 @@ class OrderBookSide(side: Side.Value,
   /**
     * @return Potential list of trades that occurred to filled this market order
     */
-  def addMarketOrder(
-      trader: Trader,
-      size: Double): Option[List[Trade]] = {
+  def addMarketOrder(trader: Trader, size: Double): Option[List[Trade]] = {
     val iter = activeOrders.iterator
     var openOrder: OrderBookEntry = null
     var remainingSize = size
@@ -108,6 +106,7 @@ class OrderBookSide(side: Side.Value,
     val taker = openOrder.trader
     val maker = trader
     val orderId = getOrderID
+    val size = Math.min(remainingSize, openOrder.size)
     val trade = side match {
       case Side.Bid =>
         Trade(virtualTime,
@@ -116,7 +115,7 @@ class OrderBookSide(side: Side.Value,
               maker.id,
               orderId,
               openOrder.price,
-              Math.min(remainingSize, openOrder.size))
+              size)
       case Side.Ask =>
         Trade(virtualTime,
               maker.id,
@@ -124,7 +123,7 @@ class OrderBookSide(side: Side.Value,
               taker.id,
               openOrder.orderId,
               openOrder.price,
-              Math.min(remainingSize, openOrder.size))
+              size)
     }
 
     //    try {

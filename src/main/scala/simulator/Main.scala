@@ -2,6 +2,7 @@ package simulator
 
 import java.io.File
 import java.time.LocalDateTime
+import java.util.concurrent.atomic.AtomicInteger
 
 import ch.qos.logback.classic.Logger
 import com.typesafe.config.ConfigFactory
@@ -43,6 +44,8 @@ object Main {
       Range(0, config.numSimulations)
     }
 
+    val simsCompleted = new AtomicInteger(0)
+
     simIndices.foreach(simulatorNumber => {
       val startTime = LocalDateTime.now()
       val traders = TraderFactory.getRandomTraders(
@@ -66,20 +69,29 @@ object Main {
 
       val sim_t0 = System.nanoTime()
 
-      simulator.run()
+      try {
+        simulator.run()
 
-      logger.debug(orderBook.transactionLog.toString)
+        logger.debug(orderBook.transactionLog.toString)
 
-      val sim_t1 = System.nanoTime()
-      logger.debug(
-        s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
+        val sim_t1 = System.nanoTime()
+        logger.debug(
+          s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
 
-      orderBook.transactionLog.export(simRoot + simulatorNumber + "/")
-      traders.foreach(
-        t =>
-          t.getTransactionLog.export(
-            simRoot + simulatorNumber + "/" + t.id.toString))
+        orderBook.transactionLog.export(simRoot + simulatorNumber + "/")
+        traders.foreach(
+          t =>
+            t.getTransactionLog.export(
+              simRoot + simulatorNumber + "/" + t.id.toString))
+
+        simsCompleted.incrementAndGet()
+      } catch {
+        case e: IllegalStateException =>
+          logger.error("Simulation failed: " + e)
+      }
     })
+
+    logger.info(simsCompleted.intValue() + "/" + config.numSimulations + " simulations ran")
 
     val prog_t1 = System.nanoTime()
     logger.info(
