@@ -13,21 +13,28 @@ import scala.util.Random
   * Using an Artificial Financial Market for studying a Cryptocurrency Market by
   * Cocco, Luisanna; Concas, Giulio; Marchesi, Michele
   */
-class RandomTrader(orderProbability: Double,
-                   cancelProbability: Double,
-                   buyPriceDistribution: TransformedDistr,
-                   sellPriceDistribution: TransformedDistr,
-                   buyOrderPriceCancellationDistribution: TransformedDistr,
-                   sellOrderPriceCancellationDistribution: TransformedDistr,
-                   buyRatio: Double,
-                   limitOrderRatio: Double,
-                   limitOrderSizeDistribution: TransformedDistr,
-                   marketOrderSizeDistribution: TransformedDistr,
-                   intervalDistribution: TransformedDistr,
+class RandomTrader(ratios: Map[String, Double],
+                   distributions: Map[String, TransformedDistr],
                    traderParams: TraderParams)
     extends Trader(traderParams) {
 
   private val logger = Logger(this.getClass)
+  private val buyPriceDistribution = distributions("buy_price")
+  private val sellPriceDistribution = distributions("sell_price")
+  private val buyPriceRelativeDistribution = distributions("buy_price_relative")
+  private val sellPriceRelativeDistribution = distributions("sell_price_relative")
+  private val buyOrderPriceCancellationDistribution = distributions("buy_cancel_price")
+  private val sellOrderPriceCancellationDistribution = distributions("sell_cancel_price")
+  private val limitOrderSizeDistribution = distributions("limit_size")
+  private val marketOrderSizeDistribution: TransformedDistr = distributions("market_size")
+  private val intervalDistribution: TransformedDistr= distributions("interval")
+
+  private val buyRatio = ratios("buy_order")
+  private val buyVolRatio = ratios("buy_order_vol")
+  private val limitOrderRatio = ratios("limit_order")
+
+  private val cancelProbability = 1
+  private val orderProbability = 1
 
   override def initialStep(orderBooks: List[OrderBook])
     : List[(LocalDateTime, RandomTrader, OrderBook, Order)] = {
@@ -84,10 +91,10 @@ class RandomTrader(orderProbability: Double,
   private def generateOrderPrice(side: Side.Value, midPrice: Double): Double = {
     val price = if (side == Side.Bid) {
       // Buy Order
-      buyPriceDistribution.sample()
+      midPrice - buyPriceRelativeDistribution.sample()
     } else {
       // Sell Order
-      sellPriceDistribution.sample()
+      midPrice + sellPriceRelativeDistribution.sample()
     }
 
     if (price <= 0 || price.isNaN || price.isInfinite || price > midPrice * 3) {

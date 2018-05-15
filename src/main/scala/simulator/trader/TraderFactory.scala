@@ -36,60 +36,25 @@ object TraderFactory {
     new HandsOffTrader(params)
   }
 
-  def getRandomTraders(
-                        orderProbability: Double,
-                        cancelProbability: Double,
-                        n: Int,
-                        totalBalance: Double,
-                        totalHoldings: Double,
-                        buyOrderRatio: Double,
-                        buyCancelRatio: Double,
-                        limitOrderRatio: Double,
-                        distributions: Map[String, TransformedDistr]): List[RandomTrader] = {
-    Range(0, n)
+  def getRandomTraders(number: Int,
+      ratios: Map[String, Double],
+      distributions: Map[String, TransformedDistr]): List[RandomTrader] = {
+
+    val totalBalance = 0
+    val totalHoldings = 0
+
+    Range(0, number)
       .map(x => {
         val traderParams = TraderParams(x,
-                                        getWealth(totalBalance, n, x),
-                                        getWealth(totalHoldings, n, x))
+                                        getWealth(totalBalance, number, x),
+                                        getWealth(totalHoldings, number, x))
         val seed = Random.nextInt()
         logger.info("Random seed: " + seed)
         implicit val basis: RandBasis = RandBasis.withSeed(seed)
 
         logger.info("Distributions: " + distributions)
 
-        val buyPriceDistribution =
-          distributions("buy_price")
-        val sellPriceDistribution =
-          distributions("sell_price")
-
-        val buyOrderPriceCancellationDistribution =
-          distributions("buy_cancel_price")
-        val sellOrderPriceCancellationDistribution =
-          distributions("sell_cancel_price")
-
-        val limitOrderSizeDistribution =
-          distributions("limit_size")
-
-        val marketOrderSizeDistribution =
-          distributions("market_size")
-
-        val intervalDistribution =
-          distributions("interval")
-
-        new RandomTrader(
-          orderProbability,
-          cancelProbability,
-          buyPriceDistribution,
-          sellPriceDistribution,
-          buyOrderPriceCancellationDistribution,
-          sellOrderPriceCancellationDistribution,
-          buyOrderRatio,
-          limitOrderRatio,
-          limitOrderSizeDistribution,
-          marketOrderSizeDistribution,
-          intervalDistribution,
-          traderParams
-        )
+        new RandomTrader(ratios, distributions, traderParams)
       })
       .toList
   }

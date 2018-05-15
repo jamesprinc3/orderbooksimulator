@@ -3,13 +3,11 @@ package simulator.trader
 import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.Logger
-import org.slf4j.LoggerFactory
-import simulator.{Side, TransactionLog}
 import simulator.events.{OrderBookEntry, Trade}
 import simulator.order.Order
 import simulator.orderbook.OrderBook
+import simulator.{Side, TransactionLog}
 
-// TODO: simulator.trader factory?
 abstract class Trader(traderParams: TraderParams) {
 
   val id: Int = traderParams.id
