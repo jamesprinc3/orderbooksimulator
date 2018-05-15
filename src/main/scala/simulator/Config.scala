@@ -112,6 +112,11 @@ object Config {
               loc = 0
               scale = 1
               ret
+            case "gumbel_l" =>
+              val ret = Gumbel(loc, scale)
+              loc = 0
+              scale = 1
+              ret
           }
 
           new TransformedDistr(contDist, loc, scale)

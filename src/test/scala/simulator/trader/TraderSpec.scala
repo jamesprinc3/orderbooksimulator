@@ -3,9 +3,8 @@ package simulator.trader
 import java.time.LocalDateTime
 
 import org.scalatest.FlatSpec
-import simulator.TestConstants
+import simulator.{Side, TestConstants}
 import simulator.events.{OrderBookEntry, Trade}
-import simulator.order.{Order, Side}
 
 class TraderSpec extends FlatSpec {
 
@@ -98,19 +97,19 @@ class TraderSpec extends FlatSpec {
     assert(trader.getOpenOrders.isEmpty)
   }
 
-  it should "throw when trade is presented with no orders on the book" in {
-    val trader = testTrader()
-
-    assertThrows[IllegalStateException](trader.updateState(mismatchedTrade))
-  }
-
-  it should "throw when trade is presented with no matching order on the book" in {
-    val trader = testTrader()
-
-    trader.updateState(basicSellOrder)
-
-    assertThrows[IllegalStateException](trader.updateState(mismatchedTrade))
-  }
+//  it should "throw when trade is presented with no orders on the book" in {
+//    val trader = testTrader()
+//
+//    assertThrows[IllegalStateException](trader.updateState(mismatchedTrade))
+//  }
+//
+//  it should "throw when trade is presented with no matching order on the book" in {
+//    val trader = testTrader()
+//
+//    trader.updateState(basicSellOrder)
+//
+//    assertThrows[IllegalStateException](trader.updateState(mismatchedTrade))
+//  }
 
   "cancelOrder" should "update balance correctly on buy order" in {
     val trader = testTrader()

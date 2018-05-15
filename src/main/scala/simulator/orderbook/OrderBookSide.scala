@@ -25,8 +25,10 @@ class OrderBookSide(side: Side.Value,
   }
 
   private def getOrderID: Int = {
+    val ret = _orderId
     _orderId += 2
-    _orderId
+
+    ret
   }
 
   def submitOrder(order: Order): Option[List[Trade]] = {

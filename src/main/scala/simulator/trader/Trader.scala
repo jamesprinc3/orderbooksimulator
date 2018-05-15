@@ -13,13 +13,31 @@ import simulator.orderbook.OrderBook
 abstract class Trader(traderParams: TraderParams) {
 
   val id: Int = traderParams.id
-  private var balance = traderParams.initialBalance
-  private var holdings = traderParams.initialHoldings
+  private var balance: Double = traderParams.initialBalance
+  private var holdings: Double = traderParams.initialHoldings
   protected var virtualTime: LocalDateTime = LocalDateTime.now()
   protected var openOrders: Set[OrderBookEntry] = Set[OrderBookEntry]()
   protected var transactionLog = new TransactionLog
 
   private val logger = Logger(this.getClass)
+
+  private def removeOpenOrder(tradedOrderId: Int, trade: Trade): Unit = {
+    openOrders.find(_.orderId == tradedOrderId) match {
+      case Some(order) =>
+        openOrders -= order
+        if (order.size != trade.size) {
+          openOrders += order.copy(size = order.size - trade.size)
+        }
+      case None =>
+      // TODO: we presume for now that this trader must have been the maker, but this feels quite flimsy and we need to be more certain
+      //        logger.debug("Illegal State!")
+      //        logger.debug("trader " + this.id.toString + " " + openOrders.toString())
+      //        logger.debug(trade.toString)
+      //        logger.debug(tradedOrderId.toString)
+      //        logger.debug(this.id.toString)
+      //        throw new IllegalStateException()
+    }
+  }
 
   def updateState(trade: Trade): Unit = {
 //    logger.debug("UPDATE TRADE - trader " + this.id.toString + " " + openOrders.toString())
@@ -42,24 +60,6 @@ abstract class Trader(traderParams: TraderParams) {
 
   def updateState(order: Order): Unit = {
     transactionLog.addOrder(order)
-  }
-
-  private def removeOpenOrder(tradedOrderId: Int, trade: Trade): Unit = {
-    openOrders.find(_.orderId == tradedOrderId) match {
-      case Some(order) =>
-        openOrders -= order
-        if (order.size != trade.size) {
-          openOrders += order.copy(size = order.size - trade.size)
-        }
-      case None =>
-        // TODO: we presume for now that this trader must have been the maker, but this feels quite flimsy and we need to be more certain
-//        logger.debug("Illegal State!")
-//        logger.debug("trader " + this.id.toString + " " + openOrders.toString())
-//        logger.debug(trade.toString)
-//        logger.debug(tradedOrderId.toString)
-//        logger.debug(this.id.toString)
-//        throw new IllegalStateException()
-    }
   }
 
   // TODO: maybe we can just calculate these values by looping through the openOrders (but performance might be poor)

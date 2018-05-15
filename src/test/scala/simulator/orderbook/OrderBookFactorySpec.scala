@@ -1,17 +1,29 @@
 package simulator.orderbook
 
-import org.scalatest._
-import simulator.order.{Order, Side}
-import simulator.trader.HandsOffTrader
+import java.time.LocalDateTime
 
-class OrderBookFactorySpec extends FlatSpec {
+import mocks.MockTrader
+import org.scalamock.scalatest.MockFactory
+import org.scalatest._
+import simulator.Side
+import simulator.order.LimitOrder
+import simulator.trader.{Trader, TraderParams}
+
+class OrderBookFactorySpec extends FlatSpec with MockFactory {
   private val buyPrice = 9
   private val sellPrice = 11
 
-  private val buyOrders = Range(0,5).map(_ => Order(Side.Bid, buyPrice, 10)).toList
-  private val sellOrders = Range(0,5).map(_ => Order(Side.Ask, sellPrice, 10)).toList
+  abstract class TraderExt extends Trader(TraderParams(0, 0, 0))
 
-  private def handsOffTrader = new HandsOffTrader()
+  private def mockTrader = new MockTrader()
+
+  def buyOrder =
+    LimitOrder(LocalDateTime.now(), Side.Bid, mockTrader, buyPrice, 10)
+  def sellOrder =
+    LimitOrder(LocalDateTime.now(), Side.Ask, mockTrader, sellPrice, 10)
+
+  private val buyOrders = Range(0, 5).map(_ => buyOrder).toList
+  private val sellOrders = Range(0, 5).map(_ => sellOrder).toList
 
   "getOrderBook" should "give empty OrderBook when given no orders" in {
     val orderBook = OrderBookFactory.getOrderBook()
@@ -20,14 +32,12 @@ class OrderBookFactorySpec extends FlatSpec {
   }
 
   it should "give correct number of orders in OrderBook when given one buy order" in {
-    val buyOrder = LimitOrder(Side.Bid, buyPrice, 10)
     val orderBook = OrderBookFactory.getOrderBook(List(buyOrder))
 
     assert(orderBook.getNumberOfOrders == 1)
   }
 
   it should "give correct number of orders in OrderBook when given one sell order" in {
-    val sellOrder = Order(Side.Ask, sellPrice, 10)
     val orderBook = OrderBookFactory.getOrderBook(List(sellOrder))
 
     assert(orderBook.getNumberOfOrders == 1)
@@ -50,6 +60,5 @@ class OrderBookFactorySpec extends FlatSpec {
 
     assert(orderBook.getNumberOfOrders == 10)
   }
-
 
 }

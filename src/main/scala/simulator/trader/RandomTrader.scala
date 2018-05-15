@@ -84,15 +84,13 @@ class RandomTrader(orderProbability: Double,
   private def generateOrderPrice(side: Side.Value, midPrice: Double): Double = {
     val price = if (side == Side.Bid) {
       // Buy Order
-      midPrice - buyPriceDistribution
-        .sample()
+      buyPriceDistribution.sample()
     } else {
       // Sell Order
-      midPrice + sellPriceDistribution
-        .sample()
+      sellPriceDistribution.sample()
     }
 
-    if (price <= 0 || price.isNaN || price.isInfinite ||  price > midPrice * 3) {
+    if (price <= 0 || price.isNaN || price.isInfinite || price > midPrice * 3) {
       generateOrderPrice(side, midPrice)
     } else {
       price
@@ -116,8 +114,6 @@ class RandomTrader(orderProbability: Double,
 
     interval
   }
-
-
 
   // TODO: order abstraction isn't quite right here (we should be passing desires up to the simulator...)
   // TODO: maybe remove duplication

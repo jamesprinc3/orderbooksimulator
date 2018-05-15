@@ -12,9 +12,10 @@ import scala.concurrent.duration.Duration
 class OrderBook(val askSide: OrderBookSide,
                 val bidSide: OrderBookSide,
                 orders: List[Order] = List(),
-                val transactionLog: TransactionLog = new TransactionLog())
+                val transactionLog: TransactionLog = new TransactionLog(),
+                startTime: LocalDateTime = LocalDateTime.now())
   // TODO: see if we can set this to some kind of default start time
-    extends Steppable(LocalDateTime.now()) {
+    extends Steppable(startTime) {
 
   private val _tickLength = Duration.fromNanos(1e6)
   // TODO: add minPrice / maxPrice?
@@ -121,7 +122,7 @@ class OrderBook(val askSide: OrderBookSide,
   }
 
   override def step(newTime: LocalDateTime): Unit = {
-    virtualTime = newTime
+    super.step(newTime)
     askSide.step(newTime)
     bidSide.step(newTime)
 //    logger.debug(

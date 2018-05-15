@@ -1,16 +1,28 @@
 package simulator.orderbook
 
-import simulator.order.{Order, Side}
-import org.scalatest._
-import simulator.TestConstants
-import simulator.trader.{TestTrader, TraderParams}
+import java.time.LocalDateTime
 
-class OrderBookSpec extends FlatSpec {
+import mocks.{MockPriority, MockTrader}
+import org.scalamock.scalatest.MockFactory
+import org.scalatest._
+import simulator.order.LimitOrder
+import simulator.trader.{TestTrader, TraderParams}
+import simulator.{Side, TestConstants}
+
+class OrderBookSpec extends FlatSpec with MockFactory {
 
   private val initialBalance = 10
   private val initialHoldings = 10
 
   private var tradeId = 1
+
+  private val testPrice = 13
+  private val testSize = 17
+
+  private val mockTrader = new MockTrader()
+  private val mockPriority = new MockPriority(Side.Bid, 0)
+
+  private val testTime = LocalDateTime.of(2014, 2, 17, 9, 0, 0)
 
   private def testTrader() = {
     val traderParams =
@@ -20,95 +32,59 @@ class OrderBookSpec extends FlatSpec {
   }
 
   // TODO: make this into some kind of system constant
-  "initialization" should "populate OrderBookSides with the correct orders" in {
-    val orderBook = TestOrderBook.getEmptyOrderBook
+  "initialization" should "populate OrderBookSides with the correct orders" in {}
 
-    val order = Order(Side.Bid, 10, 10)
-    orderBook.submitOrder(testTrader(), order)
+  "submitOrder" should "submit a limit buy order" in {
+    val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
-    assert(orderBook.getBidPrice == 10)
-  }
+    orderBook.submitOrder(
+      LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize))
 
-  "submitOrder" should "submit a buy simulator.order" in {
-    val orderBook = TestOrderBook.getEmptyOrderBook
-
-    val order = Order(Side.Bid, 10, 10)
-    orderBook.submitOrder(testTrader(), order)
-
-    assert(orderBook.getBidPrice == 10)
+    assert(orderBook.getBidPrice == testPrice)
   }
 
   it should "submit a sell order" in {
-    val orderBook = TestOrderBook.getEmptyOrderBook
+    val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
-    val order = Order(Side.Ask,10, 10)
-    orderBook.submitOrder(testTrader(), order)
+    orderBook.submitOrder(
+      LimitOrder(testTime, Side.Ask, mockTrader, testPrice, testSize))
 
-    assert(orderBook.getAskPrice == 10)
+    assert(orderBook.getAskPrice == testPrice)
   }
 
   it should "submit a buy order to bid side" in {
-    val orderBook = TestOrderBook.getEmptyOrderBook
+    val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
-    val order = Order(Side.Bid, 10, 10)
-    orderBook.submitOrder(testTrader(), order)
+    orderBook.submitOrder(
+      LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize))
 
-    val enterredOrder = orderBook.getBidSide.getActiveOrders.head
-
-    assert(enterredOrder.side == order.orderType)
-    assert(enterredOrder.price == order.price)
-    assert(enterredOrder.size == order.size)
+    assert(orderBook.getBidSide.getActiveOrders.nonEmpty)
   }
 
   it should "submit a sell order to Ask side" in {
-    val orderBook = TestOrderBook.getEmptyOrderBook
+    val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
-    val order = Order(Side.Ask, 10, 10)
-    orderBook.submitOrder(testTrader(), order)
+    orderBook.submitOrder(
+      LimitOrder(testTime, Side.Ask, mockTrader, testPrice, testSize))
 
-    val enterredOrder = orderBook.getAskSide.getActiveOrders.head
-
-    assert(enterredOrder.side == order.orderType)
-    assert(enterredOrder.price == order.price)
-    assert(enterredOrder.size == order.size)
+    assert(orderBook.getAskSide.getActiveOrders.nonEmpty)
   }
 
-  it should "submit buy and sell and not match when buyPrice < sellPrice" in {
-    val orderBook = TestOrderBook.getEmptyOrderBook
-    val buyPrice = 10
-    val sellPrice = 20
+  it should "can submit buy and sell orders without match" in {
+    val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
-    val buyOrder = Order(Side.Bid, buyPrice, 10)
-    val sellOrder = Order(Side.Ask, sellPrice, 10)
+    orderBook.submitOrder(
+      LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize))
+    orderBook.submitOrder(
+      LimitOrder(testTime, Side.Ask, mockTrader, testPrice + 1, testSize))
 
-    orderBook.submitOrder(testTrader(), buyOrder)
-    orderBook.submitOrder(testTrader(), sellOrder)
-
-    assert(orderBook.getBidSide.getActiveOrders.size == 1)
-    assert(orderBook.getAskSide.getActiveOrders.size == 1)
-  }
-
-  it should "submit buy and sell match when buyPrice >= sellPrice" in {
-    val orderBook = TestOrderBook.getEmptyOrderBook
-    val buyPrice = 20
-    val sellPrice = 10
-
-    val buyOrder = Order(Side.Bid, buyPrice, 10)
-    val sellOrder = Order(Side.Ask, sellPrice, 10)
-
-    val buyTrader = testTrader()
-    val sellTrader = testTrader()
-
-    orderBook.submitOrder(buyTrader, buyOrder)
-    orderBook.submitOrder(sellTrader, sellOrder)
-
-    assert(orderBook.getBidSide.getActiveOrders.isEmpty)
-    assert(orderBook.getAskSide.getActiveOrders.isEmpty)
+    assert(orderBook.getBidSide.getActiveOrders.nonEmpty)
+    assert(orderBook.getAskSide.getActiveOrders.nonEmpty)
   }
 
   "cancelOrder" should "cancel an simulator.order" in {
-    val order = Order(Side.Ask, 10, 10)
-    val orderBook = TestOrderBook.getOrderBook(List(order))
+    val order = LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize)
+    val orderBook = TestOrderBook.getOrderBook(List(order), mockPriority, testTime)
 
     assert(orderBook.cancelOrder(TestConstants.minOrderIndex))
   }

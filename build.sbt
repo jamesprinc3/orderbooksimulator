@@ -21,13 +21,16 @@ libraryDependencies  ++= Seq(
   "org.scalanlp" %% "breeze-viz" % "0.13.2",
 
   "org.scalactic" %% "scalactic" % "3.0.4",
-  "org.scalatest" %% "scalatest" % "3.0.4" % "test",
+
   "com.github.tototoshi" %% "scala-csv" % "1.3.5",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
   "com.github.scopt" %% "scopt" % "3.7.0",
   "io.spray" %%  "spray-json" % "1.3.3",
-  "com.typesafe" % "config" % "1.3.2"
+  "com.typesafe" % "config" % "1.3.2",
+
+  "org.scalatest" %% "scalatest" % "3.0.4" % Test,
+  "org.scalamock" %% "scalamock" % "4.1.0" % Test
 )
 
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"

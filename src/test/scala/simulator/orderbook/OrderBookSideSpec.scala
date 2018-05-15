@@ -2,147 +2,140 @@ package simulator.orderbook
 
 import java.time.LocalDateTime
 
+import mocks.{MockPriority, MockTrader}
+import org.scalamock.scalatest.MockFactory
 import org.scalatest._
 import simulator.events.OrderBookEntry
+import simulator.order.LimitOrder
+import simulator.orderbook.priority.Priority
+import simulator.trader.Trader
 import simulator.{Side, TestConstants}
-import simulator.order.{Order, Side}
-import simulator.trader.{TestTrader, TraderParams}
 
-class OrderBookSideSpec extends FlatSpec {
+class OrderBookSideSpec extends FlatSpec with MockFactory {
 
   // TODO: sort this dependency mess out
-  def emptyOrderBookSide: OrderBookSide = OrderBookSideHelper.getBidSide(List())
-  val orderbook: OrderBook = TestOrderBook.getEmptyOrderBook
-  val traderParams = TraderParams(0, 10, 10)
-  val trader = new TestTrader(traderParams)
+  private def emptyBidSide: OrderBookSide =
+    OrderBookSideHelper.getBidSide(List())
 
-  val bestBuyPrice = 101
-  val bestSellPrice = 99
-  val standardOrderSize = 10
-  val basicBuyOrder = OrderBookEntry(Side.Buy,
-                                     trader,
+  private val mockTrader = new MockTrader()
+  private val mockPriority = new MockPriority(Side.Bid, 0)
+  private val testTime = LocalDateTime.now()
+
+//  private val orderbook: OrderBook =
+//    TestOrderBook.getEmptyOrderBook(mockPriority)
+
+  private val bestBuyPrice = 101
+  private val bestSellPrice = 99
+  private val standardOrderSize = 10
+  val basicBuyOrder = OrderBookEntry(Side.Bid,
+                                     mockTrader,
                                      TestConstants.minOrderIndex,
                                      LocalDateTime.now(),
                                      bestBuyPrice,
                                      standardOrderSize)
-  val basicSellOrder = OrderBookEntry(Side.Sell,
-                                      trader,
-                                      TestConstants.minOrderIndex,
-                                      LocalDateTime.now(),
-                                      bestSellPrice,
-                                      standardOrderSize)
+//  val basicSellOrder = OrderBookEntry(Side.Ask,
+//                                      mockTrader,
+//                                      TestConstants.minOrderIndex,
+//                                      LocalDateTime.now(),
+//                                      bestSellPrice,
+//                                      standardOrderSize)
   def singularOrderBookSide: OrderBookSide =
-    new OrderBookSide(Side.Bid, List(basicBuyOrder))
+    new OrderBookSide(Side.Bid, mockPriority, List(basicBuyOrder))
 
   //------- addLimitOrder -------
 
   "addLimitOrder" should "add limit simulator.order to activeOrders" in {
-    val orderBookSide = emptyOrderBookSide
+    val orderBookSide = emptyBidSide
 
-    orderBookSide.addLimitOrder(basicBuyOrder)
+    orderBookSide.addLimitOrder(mockTrader, bestBuyPrice, standardOrderSize)
 
     assert(orderBookSide.getActiveOrders.nonEmpty)
   }
 
-  it should "reject simulator.order of incorrect type simulator.order to activeOrders" in {
-    val orderBookSide = emptyOrderBookSide
-
-    orderBookSide.addLimitOrder(basicSellOrder)
-
-    assert(orderBookSide.getActiveOrders.isEmpty)
-  }
+//  it should "call updateState in trader" in {
+//    val orderBookSide = emptyBidSide
+//
+//    (mockTrader.updateState: OrderBookEntry => Unit).expects(basicBuyOrder)
+//
+//    orderBookSide.addLimitOrder(mockTrader, bestBuyPrice, standardOrderSize)
+//  }
 
   it should "assign correct priority due to price (two orders)" in {
-    val orderBookSide = emptyOrderBookSide
+    val orderBookSide = emptyBidSide
 
-    val higherPricedOrder = OrderBookEntry(Side.Buy,
-                                           trader,
-                                           TestConstants.minOrderIndex + 1,
-                                           LocalDateTime.now(),
-                                           bestBuyPrice + 1,
-                                           10)
-    orderBookSide.addLimitOrder(basicBuyOrder)
-    orderBookSide.addLimitOrder(higherPricedOrder)
+    val highestPriorityPrice = 10
 
-    assert(
-      orderBookSide.getActiveOrders.last.orderId == TestConstants.minOrderIndex)
+    orderBookSide.addLimitOrder(mockTrader,
+                                highestPriorityPrice - 1,
+                                standardOrderSize)
+    orderBookSide.addLimitOrder(mockTrader,
+                                highestPriorityPrice,
+                                standardOrderSize)
+
+    assert(orderBookSide.getActiveOrders.head.price == highestPriorityPrice)
   }
 
   it should "assign correct priority due to arrival time (two orders)" in {
-    val orderBookSide = emptyOrderBookSide
+    val orderBookSide = emptyBidSide
 
-    val orderWithLaterArrivalTime =
-      OrderBookEntry(Side.Buy,
-                     trader,
-                     TestConstants.minOrderIndex + 1,
-                     LocalDateTime.now(),
-                     bestBuyPrice + 1,
-                     10)
-    orderBookSide.addLimitOrder(basicBuyOrder)
-    orderBookSide.addLimitOrder(orderWithLaterArrivalTime)
+    val price = 10
 
-    assert(
-      orderBookSide.getActiveOrders.last.orderId == TestConstants.minOrderIndex)
+    orderBookSide.addLimitOrder(mockTrader, price, standardOrderSize)
+    orderBookSide.step(LocalDateTime.now())
+    orderBookSide.addLimitOrder(mockTrader, price, standardOrderSize + 1)
+
+    assert(orderBookSide.getActiveOrders.last.size == standardOrderSize)
   }
 
   //------- addMarketOrder -------
 
   // TODO: figure out whether below tests are needed
-  "addMarketOrder" should "not match in an empty book" in {
-    val orderBookSide = emptyOrderBookSide
+  "addMarketOrder" should "throw IllegalStateException in an empty book" in {
+    val orderBookSide = emptyBidSide
 
-    assert(orderBookSide.addMarketOrder(basicBuyOrder)._2.isDefined)
+    assertThrows[IllegalStateException] {
+      assert(
+        orderBookSide.addMarketOrder(mockTrader, standardOrderSize).isEmpty)
+    }
   }
 
   it should "have empty OrderBook after exactly one order of same size" in {
-    val orderBookSide = emptyOrderBookSide
+    val orderBookSide = emptyBidSide
 
-    orderBookSide.addLimitOrder(basicBuyOrder)
-    val sellOrder = OrderBookEntry(Side.Sell,
-                                   trader,
-                                   TestConstants.minOrderIndex,
-                                   LocalDateTime.now(),
-                                   bestBuyPrice,
-                                   standardOrderSize)
+    orderBookSide.addLimitOrder(mockTrader, bestBuyPrice, standardOrderSize)
+    val ret = orderBookSide.addMarketOrder(mockTrader, standardOrderSize)
 
-    val ret = orderBookSide.addMarketOrder(sellOrder)._2
-
-    assert(ret.isEmpty)
     assert(orderBookSide.getActiveOrders.isEmpty)
   }
 
-  // TODO: should use 2 different traders here, really
-  it should "have one order in OrderBook after partially matching exactly one active order of same price" in {
-    val orderBookSide = emptyOrderBookSide
+  it should "have one order in OrderBook after partially matching exactly one active order" in {
+    val orderBookSide = emptyBidSide
 
-    orderBookSide.addLimitOrder(basicBuyOrder)
-    val sellOrder = OrderBookEntry(Side.Sell,
-                                   trader,
-                                   TestConstants.minOrderIndex,
-                                   LocalDateTime.now(),
-                                   bestBuyPrice,
-                                   standardOrderSize - 1)
+    orderBookSide.addLimitOrder(mockTrader, bestBuyPrice, standardOrderSize)
+    orderBookSide.addMarketOrder(mockTrader, standardOrderSize - 1)
 
-    val ret = orderBookSide.addMarketOrder(sellOrder)._2
-
-    assert(ret.isEmpty)
     assert(orderBookSide.getActiveOrders.head.size == 1)
   }
 
-  it should "return partially matched order" in {
-    val orderBookSide = emptyOrderBookSide
+  it should "return a trade" in {
+    val orderBookSide = emptyBidSide
 
-    orderBookSide.addLimitOrder(basicBuyOrder)
-    val sellOrder = OrderBookEntry(Side.Sell,
-                                   trader,
-                                   TestConstants.minOrderIndex,
-                                   LocalDateTime.now(),
-                                   bestBuyPrice,
-                                   standardOrderSize + 1)
-    val ret = orderBookSide.addMarketOrder(sellOrder)
+    orderBookSide.addLimitOrder(mockTrader, bestBuyPrice, standardOrderSize)
+    val ret = orderBookSide.addMarketOrder(mockTrader, standardOrderSize - 1)
 
-    assert(ret._2.get.size == 1)
-    assert(orderBookSide.getActiveOrders.isEmpty)
+    assert(ret.isDefined)
+    assert(ret.get.length == 1)
+  }
+
+  it should "return numerous trades when matching multiple orders" in {
+    val orderBookSide = emptyBidSide
+
+    orderBookSide.addLimitOrder(mockTrader, bestBuyPrice, standardOrderSize)
+    orderBookSide.addLimitOrder(mockTrader, bestBuyPrice, standardOrderSize)
+    val ret = orderBookSide.addMarketOrder(mockTrader, standardOrderSize * 2)
+
+    assert(ret.isDefined)
+    assert(ret.get.length == 2)
   }
 
   //------- getBestPrice -------
@@ -155,7 +148,7 @@ class OrderBookSideSpec extends FlatSpec {
     val bestPrice = 100
     val orders = Range(0, 3)
       .map(x => {
-        Order(Side.Buy, bestPrice, 10)
+        LimitOrder(testTime, Side.Bid, mockTrader, bestPrice, 10)
       })
       .toList
     val orderBookSide = OrderBookSideHelper.getBidSide(orders)
@@ -167,7 +160,7 @@ class OrderBookSideSpec extends FlatSpec {
     val bestPrice = 100
     val orders = Range(0, 3)
       .map(x => {
-        Order(Side.Buy, bestPrice + x, 10)
+        LimitOrder(testTime, Side.Bid, mockTrader, bestPrice - x, 10)
       })
       .toList
     val orderBookSide = OrderBookSideHelper.getBidSide(orders)
