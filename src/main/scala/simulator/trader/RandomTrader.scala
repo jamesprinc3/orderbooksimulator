@@ -29,9 +29,9 @@ class RandomTrader(ratios: Map[String, Double],
   private val marketOrderSizeDistribution: TransformedDistr = distributions("market_size")
   private val intervalDistribution: TransformedDistr= distributions("interval")
 
-  private val buyRatio = ratios("buy_order")
-  private val buyVolRatio = ratios("buy_order_vol")
-  private val limitOrderRatio = ratios("limit_order")
+  private val buyRatio = ratios("buy_sell_order_ratio")
+  private val buyVolRatio = ratios("buy_sell_volume_ratio")
+  private val limitOrderRatio = ratios("limit_market_order_ratio")
 
   private val cancelProbability = 1
   private val orderProbability = 1

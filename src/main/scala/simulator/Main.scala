@@ -50,20 +50,14 @@ object Main {
       val startTime = LocalDateTime.now()
       val traders = TraderFactory.getRandomTraders(
         1,
-        0,
-        1,
-        10000,
-        1,
-        config.buyVolumeRatio, // TODO: this should be the wrong metric...
-        0.5,
-        config.limitOrderRatio,
+        config.ratios,
         config.distributions)
       val orderBook =
         OrderBookFactory.importOrderBook(config.orderBookPath, startTime)
       val simulator =
         new DiscreteEventSimulator(startTime,
                                    startTime.plusNanos((300 * 1e9).toLong),
-                                   config.buyCancelRatio,
+                                   config.ratios("buy_sell_cancel_ratio"),
                                    traders,
                                    List(orderBook))
 

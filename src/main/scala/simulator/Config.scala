@@ -12,10 +12,7 @@ case class Config(numSimulations: Int = 1,
                   logLevel: Level,
                   simRoot: String = "",
                   orderBookPath: String = "",
-                  buyOrderRatio: Double = 0.5,
-                  buyCancelRatio: Double = 0.5,
-                  buyVolumeRatio: Double = 0.5,
-                  limitOrderRatio: Double = 0.99,
+                  ratios: Map[String, Double],
                   distributions: Map[String, TransformedDistr] =
                     Map[String, TransformedDistr]())
 
@@ -32,10 +29,7 @@ object Config {
     val json = Source.fromFile(paramsPath).getLines.mkString("")
     val jsonAst = json.parseJson
 
-    val buyOrderRatio = getRatio(jsonAst, "buy_sell_order_ratio")
-    val buyVolumeRatio = getRatio(jsonAst, "buy_sell_volume_ratio")
-    val buyCancelRatio = getRatio(jsonAst, "buy_sell_cancel_ratio")
-    val limitOrderRatio = getRatio(jsonAst, "limit_market_order_ratio")
+    val ratios = parseRatios(jsonAst)
     val distributions = parseDistributions(jsonAst)
 
     Config(numSimulations,
@@ -43,10 +37,7 @@ object Config {
            logLevel,
            simRootPath,
            orderBookPath,
-           buyOrderRatio,
-           buyVolumeRatio,
-           buyCancelRatio,
-           limitOrderRatio,
+           ratios,
            distributions)
   }
 
@@ -125,24 +116,20 @@ object Config {
 
   }
 
-  def getBuyOrderRatio(parametersPath: String): Double = {
-    val json = Source.fromFile(parametersPath).getLines.mkString("")
-    val jsonAst = json.parseJson
+  def parseRatios(jsonAst: JsValue): Map[String, Double] = {
+    val ratios = jsonAst.asJsObject
+      .fields("ratios")
+      .asJsObject
+      .fields
+      .map(kv => {
+        val ratio = kv._2 match {
+          case JsArray(Vector(JsNumber(a), JsNumber(b))) =>
+            a.toDouble
+        }
+        (kv._1, ratio)
+      })
 
-    jsonAst.asJsObject().fields("buy_sell_order_ratio") match {
-      case JsArray(Vector(JsNumber(bRatio), JsNumber(sRatio))) =>
-        bRatio.toDouble
-    }
-  }
-
-  def getBuyVolumeRatio(parametersPath: String): Double = {
-    val json = Source.fromFile(parametersPath).getLines.mkString("")
-    val jsonAst = json.parseJson
-
-    jsonAst.asJsObject().fields("buy_sell_volume_ratio") match {
-      case JsArray(Vector(JsNumber(bRatio), JsNumber(sRatio))) =>
-        bRatio.toDouble
-    }
+    ratios
   }
 
   def getRatio(jsonAst: JsValue, name: String): Double = {
@@ -152,8 +139,7 @@ object Config {
     }
   }
 
-  def parseDistributions(
-      jsonAst: JsValue): Map[String, TransformedDistr] = {
+  def parseDistributions(jsonAst: JsValue): Map[String, TransformedDistr] = {
     import DistJsonProtocol._
     val distributions = jsonAst.asJsObject
       .fields("distributions")
@@ -163,6 +149,5 @@ object Config {
 
     distributions
   }
-
 
 }
