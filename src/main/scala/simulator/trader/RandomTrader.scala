@@ -31,9 +31,9 @@ class RandomTrader(ratios: Map[String, Double],
 
   private val buyRatio = ratios("buy_sell_order_ratio")
   private val buyVolRatio = ratios("buy_sell_volume_ratio")
-  private val limitOrderRatio = ratios("limit_market_order_ratio")
+  private val limitOrderRatio = 0.99 //ratios("limit_market_order_ratio")
 
-  private val cancelProbability = 1
+  private val cancelProbability = 0
   private val orderProbability = 1
 
   override def initialStep(orderBooks: List[OrderBook])
@@ -132,16 +132,18 @@ class RandomTrader(ratios: Map[String, Double],
       openOrders.filter(_.side == Side.Ask)
     }
     if (validOrders.nonEmpty) {
-      val midPrice = orderBook.getPrice
+      orderBook.cancelOrder(validOrders.map(_.orderId).toList(Random.nextInt(validOrders.size)))
 
-      val targetPrice = if (isBuySide) {
-        midPrice - buyOrderPriceCancellationDistribution.sample()
-      } else {
-        midPrice + sellOrderPriceCancellationDistribution.sample()
-      }
+//      val midPrice = orderBook.getPrice
 
-      orderBook.cancelOrder(
-        validOrders.minBy[Double](o => math.abs(o.price - targetPrice)).orderId)
+//      val targetPrice = if (isBuySide) {
+//        midPrice - buyOrderPriceCancellationDistribution.sample()
+//      } else {
+//        midPrice + sellOrderPriceCancellationDistribution.sample()
+//      }
+//
+//      orderBook.cancelOrder(
+//        validOrders.minBy[Double](o => math.abs(o.price - targetPrice)).orderId)
 
     }
   }

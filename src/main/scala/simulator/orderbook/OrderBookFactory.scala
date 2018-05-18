@@ -47,7 +47,7 @@ object OrderBookFactory {
     * @param filePath path to a CSV file
     * @return an OrderBook populated with the orders contained within the CSV file
     */
-  def importOrderBook(filePath: String, startTime: LocalDateTime): OrderBook = {
+  def importOrders(filePath: String, startTime: LocalDateTime): List[Order] = {
     val reader = CSVReader.open(new File(filePath))
     val handsOffTrader = TraderFactory.getHandsOffTrader
     var totalSize = 0.0
@@ -59,14 +59,12 @@ object OrderBookFactory {
 
       totalSize += order("size").toDouble
 
-      LimitOrder(startTime, side, handsOffTrader, order("price").toDouble, order("size").toDouble * 500)
+      LimitOrder(startTime, side, handsOffTrader, order("price").toDouble, order("size").toDouble)
     })
-
-
 
     logger.debug(orders.sortBy(order => order.price).mkString("\n"))
 
-    getOrderBook(orders)
+    orders
   }
 
 }

@@ -74,18 +74,10 @@ class OrderBookSide(side: Side.Value,
     var tradesThatHappened: List[Trade] = List[Trade]()
     while (iter.hasNext && remainingSize > 0) {
       openOrder = iter.next()
-
-//      breakable {
-//        if (openOrder.trader.id == trader.id) {
-//          break
-//        } else {
-
       val trade = reconcile(openOrder, trader, remainingSize)
       tradesThatHappened = tradesThatHappened ++ List(trade)
-      activeOrders.remove(openOrder)
+      activeOrders -= openOrder
       remainingSize -= openOrder.size
-//        }
-//      }
     }
 
     if (remainingSize > 0) {
@@ -156,7 +148,6 @@ class OrderBookSide(side: Side.Value,
         activeOrders.remove(orderToCancel)
         Some(orderToCancel)
     }
-
   }
 
   def getBestPrice: Option[Double] = {

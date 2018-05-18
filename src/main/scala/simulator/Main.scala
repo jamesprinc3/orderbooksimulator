@@ -8,6 +8,7 @@ import ch.qos.logback.classic.Logger
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 import simulator.orderbook.OrderBookFactory
+import simulator.orderbook.OrderBookFactory.getOrderBook
 import simulator.simulators.DiscreteEventSimulator
 import simulator.trader.TraderFactory
 
@@ -46,14 +47,18 @@ object Main {
 
     val simsCompleted = new AtomicInteger(0)
 
+    val startTime = LocalDateTime.now()
+
+    val orders =
+      OrderBookFactory.importOrders(config.orderBookPath, startTime)
+
     simIndices.foreach(simulatorNumber => {
-      val startTime = LocalDateTime.now()
+
       val traders = TraderFactory.getRandomTraders(
         1,
         config.ratios,
         config.distributions)
-      val orderBook =
-        OrderBookFactory.importOrderBook(config.orderBookPath, startTime)
+      val orderBook = getOrderBook(orders)
       val simulator =
         new DiscreteEventSimulator(startTime,
                                    startTime.plusNanos((300 * 1e9).toLong),
