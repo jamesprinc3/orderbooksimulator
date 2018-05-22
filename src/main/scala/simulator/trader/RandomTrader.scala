@@ -47,9 +47,9 @@ class RandomTrader(ratios: Map[String, Double],
     virtualTime = newTime
 
     orderBooks.flatMap(orderBook => {
-      if (Random.nextFloat() < cancelProbability) {
-        cancelRandomOrder(orderBook)
-      }
+//      if (Random.nextFloat() < cancelProbability) {
+//        cancelRandomOrder(orderBook)
+//      }
 
       if (Random.nextFloat() < orderProbability) {
         generateOrder(orderBook)
@@ -124,27 +124,27 @@ class RandomTrader(ratios: Map[String, Double],
 
   // TODO: order abstraction isn't quite right here (we should be passing desires up to the simulator...)
   // TODO: maybe remove duplication
-  private def cancelRandomOrder(orderBook: OrderBook) = {
-    val isBuySide = Random.nextFloat() < buyRatio
-    val validOrders = if (isBuySide) {
-      openOrders.filter(_.side == Side.Bid)
-    } else {
-      openOrders.filter(_.side == Side.Ask)
-    }
-    if (validOrders.nonEmpty) {
-      orderBook.cancelOrder(validOrders.map(_.orderId).toList(Random.nextInt(validOrders.size)))
-
-//      val midPrice = orderBook.getPrice
-
-//      val targetPrice = if (isBuySide) {
-//        midPrice - buyOrderPriceCancellationDistribution.sample()
-//      } else {
-//        midPrice + sellOrderPriceCancellationDistribution.sample()
-//      }
+//  private def cancelRandomOrder(orderBook: OrderBook) = {
+//    val isBuySide = Random.nextFloat() < buyRatio
+//    val validOrders = if (isBuySide) {
+//      openOrders.filter(_.side == Side.Bid)
+//    } else {
+//      openOrders.filter(_.side == Side.Ask)
+//    }
+//    if (validOrders.nonEmpty) {
+//      orderBook.cancelOrder(validOrders.map(_.orderId).toList(Random.nextInt(validOrders.size)))
 //
-//      orderBook.cancelOrder(
-//        validOrders.minBy[Double](o => math.abs(o.price - targetPrice)).orderId)
-
-    }
-  }
+////      val midPrice = orderBook.getPrice
+//
+////      val targetPrice = if (isBuySide) {
+////        midPrice - buyOrderPriceCancellationDistribution.sample()
+////      } else {
+////        midPrice + sellOrderPriceCancellationDistribution.sample()
+////      }
+////
+////      orderBook.cancelOrder(
+////        validOrders.minBy[Double](o => math.abs(o.price - targetPrice)).orderId)
+//
+//    }
+//  }
 }

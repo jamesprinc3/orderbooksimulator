@@ -8,6 +8,7 @@ import spray.json._
 import scala.io.Source
 
 case class Config(numSimulations: Int = 1,
+                  simulationSeconds: Int = 300,
                   parallel: Boolean = false,
                   logLevel: Level,
                   simRoot: String = "",
@@ -19,6 +20,7 @@ case class Config(numSimulations: Int = 1,
 object Config {
 
   def init(numSimulations: Int,
+           simulationSeconds: Int,
            parallel: Boolean,
            logLevelStr: String,
            simRootPath: String,
@@ -33,6 +35,7 @@ object Config {
     val distributions = parseDistributions(jsonAst)
 
     Config(numSimulations,
+           simulationSeconds,
            parallel,
            logLevel,
            simRootPath,

@@ -19,16 +19,17 @@ object Main {
   private val logger = com.typesafe.scalalogging.Logger(this.getClass)
 
   def main(args: Array[String]): Unit = {
-    val config = getConfig(args.headOption)
+    val conf = loadConfig(args.headOption)
+    val globalConfig = parseConfig(conf)
 
     LoggerFactory
       .getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME)
       .asInstanceOf[Logger]
-      .setLevel(config.logLevel)
+      .setLevel(globalConfig.logLevel)
 
-    logger.debug(config.toString)
+    logger.debug(globalConfig.toString)
 
-    val simRoot = config.simRoot
+    val simRoot = globalConfig.simRoot
     val simPath = Path(simRoot)
 
     // Flush the output directory on each run
@@ -37,12 +38,12 @@ object Main {
 
     val prog_t0 = System.nanoTime()
 
-    println(config)
+    println(globalConfig)
 
-    val simIndices = if (config.parallel) {
-      Range(0, config.numSimulations).par
+    val simIndices = if (globalConfig.parallel) {
+      Range(0, globalConfig.numSimulations).par
     } else {
-      Range(0, config.numSimulations)
+      Range(0, globalConfig.numSimulations)
     }
 
     val simsCompleted = new AtomicInteger(0)
@@ -50,14 +51,16 @@ object Main {
     val startTime = LocalDateTime.now()
 
     val orders =
-      OrderBookFactory.importOrders(config.orderBookPath, startTime)
+      OrderBookFactory.importOrders(globalConfig.orderBookPath, startTime)
 
     simIndices.foreach(simulatorNumber => {
 
-      val traders = TraderFactory.getRandomTraders(
-        1,
-        config.ratios,
-        config.distributions)
+      val config = parseConfig(conf)
+      val numTraders = 1
+
+      val traders = TraderFactory.getRandomTraders(numTraders,
+                                                   config.ratios,
+                                                   config.distributions)
       val orderBook = getOrderBook(orders)
       val simulator =
         new DiscreteEventSimulator(startTime,
@@ -90,16 +93,18 @@ object Main {
       }
     })
 
-    logger.info(simsCompleted.intValue() + "/" + config.numSimulations + " simulations ran")
+    logger.info(
+      simsCompleted
+        .intValue() + "/" + globalConfig.numSimulations + " simulations ran")
 
     val prog_t1 = System.nanoTime()
     logger.info(
       s"Simulations took: " + ((prog_t1 - prog_t0) / 1e9) + " seconds")
   }
 
-  def getConfig(pathOption: Option[String]): Config = {
+  def loadConfig(pathOption: Option[String]): com.typesafe.config.Config = {
     println(pathOption)
-    val conf = pathOption match {
+    pathOption match {
       case None =>
         ConfigFactory.load()
       case Some(path) =>
@@ -108,8 +113,11 @@ object Main {
           ConfigFactory.parseFile(myConfigFile)
         ConfigFactory.load(fileConfig)
     }
+  }
 
+  def parseConfig(conf: com.typesafe.config.Config): Config = {
     val numSimulations = conf.getInt("execution.numSimulations")
+    val simulationSeconds = conf.getInt("execution.simulationSeconds")
     val parallel = conf.getBoolean("execution.parallel")
     val logLevel = conf.getString("execution.logLevel")
     val simRootPath = conf.getString("paths.simRoot")
@@ -117,6 +125,7 @@ object Main {
     val orderBookPath = conf.getString("paths.orderbook")
 
     Config.init(numSimulations,
+                simulationSeconds,
                 parallel,
                 logLevel,
                 simRootPath,
