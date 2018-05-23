@@ -88,13 +88,25 @@ class RandomTrader(ratios: Map[String, Double],
     List((orderTime, this, orderBook, order))
   }
 
-  private def generateOrderPrice(side: Side.Value, midPrice: Double): Double = {
-    val price = if (side == Side.Bid) {
-      // Buy Order
-      midPrice - buyPriceRelativeDistribution.sample()
+  private def generateSample(side: Side.Value): Double = {
+    val sample = side match {
+      case Side.Bid => buyPriceRelativeDistribution.sample()
+      case Side.Ask => sellPriceRelativeDistribution.sample()
+    }
+
+    if (sample < 0) {
+      generateSample(side)
     } else {
-      // Sell Order
-      midPrice + sellPriceRelativeDistribution.sample()
+      sample
+    }
+  }
+
+  private def generateOrderPrice(side: Side.Value, midPrice: Double): Double = {
+    val sample = generateSample(side)
+
+    val price = side match {
+      case Side.Bid => midPrice - sample
+      case Side.Ask => midPrice + sample
     }
 
     if (price <= 0 || price.isNaN || price.isInfinite || price > midPrice * 3) {

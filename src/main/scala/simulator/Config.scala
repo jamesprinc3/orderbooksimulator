@@ -9,6 +9,7 @@ import scala.io.Source
 
 case class Config(numSimulations: Int = 1,
                   simulationSeconds: Int = 300,
+                  numTraders: Int = 1,
                   parallel: Boolean = false,
                   logLevel: Level,
                   simRoot: String = "",
@@ -21,6 +22,7 @@ object Config {
 
   def init(numSimulations: Int,
            simulationSeconds: Int,
+           numTraders: Int,
            parallel: Boolean,
            logLevelStr: String,
            simRootPath: String,
@@ -36,6 +38,7 @@ object Config {
 
     Config(numSimulations,
            simulationSeconds,
+           numTraders,
            parallel,
            logLevel,
            simRootPath,

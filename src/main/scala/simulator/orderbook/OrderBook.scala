@@ -21,7 +21,7 @@ class OrderBook(val askSide: OrderBookSide,
   // TODO: add minPrice / maxPrice?
   // Negative prices don't make sense anyway, so should probably put this in
 
-  orders.foreach(order => submitOrder(order, checkTime = false))
+  orders.foreach(order => submitOrder(order, checkTime = false, commitLog = false))
 
   private val logger = Logger(this.getClass)
 
@@ -49,12 +49,15 @@ class OrderBook(val askSide: OrderBookSide,
     (getBidPrice + getAskPrice) / 2
   }
 
-  def submitOrder(order: Order, checkTime: Boolean = true): Unit = {
+  def submitOrder(order: Order, checkTime: Boolean = true, commitLog: Boolean = true): Unit = {
     if (checkTime && order.time != virtualTime) {
       throw new IllegalStateException("Times do not match")
     }
 
-    transactionLog.addOrder(order)
+    if (commitLog) {
+      transactionLog.addOrder(order)
+    }
+
     order.trader.updateState(order)
     val trades = (order.side, order) match {
       case (Side.Bid, order: LimitOrder) => bidSide.submitOrder(order)

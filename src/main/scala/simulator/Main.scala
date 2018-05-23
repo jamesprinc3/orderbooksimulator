@@ -56,7 +56,7 @@ object Main {
     simIndices.foreach(simulatorNumber => {
 
       val config = parseConfig(conf)
-      val numTraders = 1
+      val numTraders = config.numTraders
 
       val traders = TraderFactory.getRandomTraders(numTraders,
                                                    config.ratios,
@@ -80,11 +80,17 @@ object Main {
         logger.debug(
           s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
 
+
         orderBook.transactionLog.export(simRoot + simulatorNumber + "/")
-        traders.foreach(
-          t =>
-            t.getTransactionLog.export(
-              simRoot + simulatorNumber + "/" + t.id.toString))
+
+        // Only write out per-trader data if multiple traders
+        if (numTraders > 1){
+          traders.foreach(
+            t =>
+              t.getTransactionLog.export(
+                simRoot + simulatorNumber + "/" + t.id.toString))
+        }
+
 
         simsCompleted.incrementAndGet()
       } catch {
@@ -117,6 +123,7 @@ object Main {
 
   def parseConfig(conf: com.typesafe.config.Config): Config = {
     val numSimulations = conf.getInt("execution.numSimulations")
+    val numTraders = conf.getInt("execution.numTraders")
     val simulationSeconds = conf.getInt("execution.simulationSeconds")
     val parallel = conf.getBoolean("execution.parallel")
     val logLevel = conf.getString("execution.logLevel")
@@ -126,6 +133,7 @@ object Main {
 
     Config.init(numSimulations,
                 simulationSeconds,
+                numTraders,
                 parallel,
                 logLevel,
                 simRootPath,

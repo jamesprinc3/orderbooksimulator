@@ -5,7 +5,7 @@ import java.nio.file.{Files, Paths}
 
 import com.github.tototoshi.csv.CSVWriter
 import simulator.events.{Cancel, Trade}
-import simulator.order.Order
+import simulator.order.{LimitOrder, MarketOrder, Order}
 
 import scala.collection.mutable.ListBuffer
 
@@ -31,8 +31,12 @@ class TransactionLog() {
     ensureDirectoryExists(fileDir)
 
     val orderHeader =
-      List("time", "side", "trader_id", "order_id", "price", "size")
-    val orderData: Seq[Seq[String]] = orders.map(order => order.toFields)
+      List("order_type", "time", "side", "trader_id", "price", "size")
+    val orderData: Seq[Seq[String]] = orders.map {
+      case order: LimitOrder => "limit" +: order.toFields
+      case order: MarketOrder => "market" +: order.toFields
+    }
+
     writeEvents(fileDir + "orders.csv", orderHeader, orderData)
 
     val tradeHeader = List("time",
