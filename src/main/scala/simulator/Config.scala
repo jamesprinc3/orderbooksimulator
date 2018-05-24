@@ -69,6 +69,11 @@ object Config {
           var scale = coeffs("scale")
 
           val contDist = distSplit(0) match {
+            case "norm" =>
+              val ret = new Gaussian(loc, scale)
+              loc = 0
+              scale = 1
+              ret
             case "expon" =>
               val ret = new Exponential(1 / scale)
               scale = 1

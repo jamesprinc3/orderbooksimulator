@@ -64,7 +64,7 @@ object Main {
       val orderBook = getOrderBook(orders)
       val simulator =
         new DiscreteEventSimulator(startTime,
-                                   startTime.plusNanos((300 * 1e9).toLong),
+                                   startTime.plusNanos((config.simulationSeconds * 1e9).toLong),
                                    config.ratios("buy_sell_cancel_ratio"),
                                    traders,
                                    List(orderBook))
