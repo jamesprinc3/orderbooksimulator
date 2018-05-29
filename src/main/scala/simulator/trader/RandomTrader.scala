@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import com.typesafe.scalalogging.Logger
 import simulator.order.{LimitOrder, MarketOrder, Order}
 import simulator.orderbook.OrderBook
-import simulator.{Side, TransformedDistr}
+import simulator.{MultivariateDistribution, Side, TransformedDistr}
 
 import scala.util.Random
 
@@ -22,12 +22,24 @@ class RandomTrader(ratios: Map[String, Double],
   private val buyPriceDistribution = distributions("buy_price")
   private val sellPriceDistribution = distributions("sell_price")
   private val buyPriceRelativeDistribution = distributions("buy_price_relative")
-  private val sellPriceRelativeDistribution = distributions("sell_price_relative")
-  private val buyOrderPriceCancellationDistribution = distributions("buy_cancel_price")
-  private val sellOrderPriceCancellationDistribution = distributions("sell_cancel_price")
-  private val limitOrderSizeDistribution = distributions("limit_size")
-  private val marketOrderSizeDistribution: TransformedDistr = distributions("market_size")
-  private val intervalDistribution: TransformedDistr= distributions("interval")
+  private val sellPriceRelativeDistribution = distributions(
+    "sell_price_relative")
+  private val buyOrderPriceCancellationDistribution = distributions(
+    "buy_cancel_price")
+  private val sellOrderPriceCancellationDistribution = distributions(
+    "sell_cancel_price")
+  private val buyMarketOrderSizeDistribution: TransformedDistr = distributions(
+    "buy_market_size")
+  private val sellMarketOrderSizeDistribution: TransformedDistr = distributions(
+    "sell_market_size")
+  private val intervalDistribution: TransformedDistr = distributions("interval")
+
+  private val buyLimitOrderMutliDistr = new MultivariateDistribution(
+    distributions("buy_price_relative"),
+    distributions("buy_limit_size"))
+  private val sellLimitOrderMutliDistr = new MultivariateDistribution(
+    distributions("sell_price_relative"),
+    distributions("sell_limit_size"))
 
   private val buyRatio = ratios("buy_sell_order_ratio")
   private val buyVolRatio = ratios("buy_sell_volume_ratio")
@@ -65,9 +77,7 @@ class RandomTrader(ratios: Map[String, Double],
 
 //    val priceSigma = 0.001 //k * 0.01 //orderBook.getVolatility(volatilityTicks)
     val midPrice = orderBook.getPrice
-
-    val interval = generateInterval(intervalDistribution)
-    val orderTime = virtualTime.plusNanos((interval * 1e6).toLong)
+    val orderTime = generateOrderTime()
 
     val side = if (Random.nextFloat() < buyRatio) {
       Side.Bid
@@ -76,23 +86,35 @@ class RandomTrader(ratios: Map[String, Double],
     }
 
     val order = if (Random.nextDouble() < limitOrderRatio) {
-      generateLimitOrder(side, midPrice)
+      generateLimitOrder(orderTime, side, midPrice)
     } else {
-      val size = generateOrderSize(marketOrderSizeDistribution)
-      logger.debug("market order size: " + size)
-      MarketOrder(orderTime, side, this, size)
+      generateMarketOrder(orderTime, side)
     }
     List((orderTime, this, orderBook, order))
   }
 
-  private def generateLimitOrder(side: Side.Value, midPrice: Double) = {
+  private def generateLimitOrder(orderTime: LocalDateTime, side: Side.Value, midPrice: Double) = {
+    val (price, size) = side match {
+      case Side.Bid =>
+        buyLimitOrderMutliDistr.sample()
+      case Side.Ask =>
+        sellLimitOrderMutliDistr.sample()
+    }
 
-    val interval = generateInterval(intervalDistribution)
-    val orderTime = virtualTime.plusNanos((interval * 1e6).toLong)
-
-    val price = generateOrderPrice(side, midPrice)
-    val size = generateOrderSize(limitOrderSizeDistribution)
     LimitOrder(orderTime, side, this, price, size)
+  }
+
+  private def generateMarketOrder(orderTime: LocalDateTime, side: Side.Value) = {
+    val size = side match {
+      case Side.Bid => generateOrderSize(buyMarketOrderSizeDistribution)
+      case Side.Ask => generateOrderSize(sellMarketOrderSizeDistribution)
+    }
+    MarketOrder(orderTime, side, this, size)
+  }
+
+  private def generateOrderTime() = {
+    val interval = generateInterval(intervalDistribution)
+    virtualTime.plusNanos((interval * 1e6).toLong)
   }
 
   private def generateSample(side: Side.Value): Double = {
