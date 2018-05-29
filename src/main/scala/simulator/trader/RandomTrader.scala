@@ -75,17 +75,24 @@ class RandomTrader(ratios: Map[String, Double],
       Side.Ask
     }
 
-    val price = generateOrderPrice(side, midPrice)
-
     val order = if (Random.nextDouble() < limitOrderRatio) {
-      val size = generateOrderSize(limitOrderSizeDistribution)
-      LimitOrder(orderTime, side, this, price, size)
+      generateLimitOrder(side, midPrice)
     } else {
       val size = generateOrderSize(marketOrderSizeDistribution)
       logger.debug("market order size: " + size)
       MarketOrder(orderTime, side, this, size)
     }
     List((orderTime, this, orderBook, order))
+  }
+
+  private def generateLimitOrder(side: Side.Value, midPrice: Double) = {
+
+    val interval = generateInterval(intervalDistribution)
+    val orderTime = virtualTime.plusNanos((interval * 1e6).toLong)
+
+    val price = generateOrderPrice(side, midPrice)
+    val size = generateOrderSize(limitOrderSizeDistribution)
+    LimitOrder(orderTime, side, this, price, size)
   }
 
   private def generateSample(side: Side.Value): Double = {

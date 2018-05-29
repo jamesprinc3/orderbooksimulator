@@ -23,7 +23,7 @@ class MockOrderBook()
 
   override def getPrice: Double = { 0 }
 
-  override def submitOrder(order: Order, checkTime: Boolean = true): Unit = {}
+  override def submitOrder(order: Order, checkTime: Boolean = true, commitLog: Boolean = true): Unit = {}
 
   override def getOrder(orderId: Int): Option[OrderBookEntry] = {
     None

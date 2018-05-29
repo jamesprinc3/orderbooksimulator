@@ -15,6 +15,7 @@ case class Config(numSimulations: Int = 1,
                   simRoot: String = "",
                   orderBookPath: String = "",
                   ratios: Map[String, Double],
+                  correlations: Map[String, Double],
                   distributions: Map[String, TransformedDistr] =
                     Map[String, TransformedDistr]())
 
@@ -34,6 +35,7 @@ object Config {
     val jsonAst = json.parseJson
 
     val ratios = parseRatios(jsonAst)
+    val correlations = parseCorrelations(jsonAst)
     val distributions = parseDistributions(jsonAst)
 
     Config(numSimulations,
@@ -44,6 +46,7 @@ object Config {
            simRootPath,
            orderBookPath,
            ratios,
+      correlations,
            distributions)
   }
 
@@ -143,11 +146,20 @@ object Config {
     ratios
   }
 
-  def getRatio(jsonAst: JsValue, name: String): Double = {
-    jsonAst.asJsObject().fields(name) match {
-      case JsArray(Vector(JsNumber(aRatio), JsNumber(_))) =>
-        aRatio.toDouble
-    }
+  def parseCorrelations(jsonAst: JsValue): Map[String, Double] = {
+    val corrs = jsonAst.asJsObject
+      .fields("correlations")
+      .asJsObject
+      .fields
+      .map(kv => {
+        val corr = kv._2 match {
+          case JsNumber(c) =>
+            c.toDouble
+        }
+        (kv._1, corr)
+      })
+
+    corrs
   }
 
   def parseDistributions(jsonAst: JsValue): Map[String, TransformedDistr] = {
