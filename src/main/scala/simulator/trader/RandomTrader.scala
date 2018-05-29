@@ -1,6 +1,7 @@
 package simulator.trader
 import java.time.LocalDateTime
 
+import breeze.linalg._
 import com.typesafe.scalalogging.Logger
 import simulator.order.{LimitOrder, MarketOrder, Order}
 import simulator.orderbook.OrderBook
@@ -14,6 +15,7 @@ import scala.util.Random
   * Cocco, Luisanna; Concas, Giulio; Marchesi, Michele
   */
 class RandomTrader(ratios: Map[String, Double],
+                   correlations: Map[String, Double],
                    distributions: Map[String, TransformedDistr],
                    traderParams: TraderParams)
     extends Trader(traderParams) {
@@ -34,12 +36,18 @@ class RandomTrader(ratios: Map[String, Double],
     "sell_market_size")
   private val intervalDistribution: TransformedDistr = distributions("interval")
 
+  private val buyPriceSizeCorr: Double = correlations("buy_price_size")
+  private val sellPriceSizeCorr: Double = correlations("sell_price_size")
+
+  private val buyPriceSizeCorrMatrix = DenseMatrix((1.0, buyPriceSizeCorr), (buyPriceSizeCorr, 1.0))
+  private val sellPriceSizeCorrMatrix = DenseMatrix((1.0, sellPriceSizeCorr), (sellPriceSizeCorr, 1.0))
+
   private val buyLimitOrderMutliDistr = new MultivariateDistribution(
     distributions("buy_price_relative"),
-    distributions("buy_limit_size"))
+    distributions("buy_limit_size"), 1000, buyPriceSizeCorrMatrix)
   private val sellLimitOrderMutliDistr = new MultivariateDistribution(
     distributions("sell_price_relative"),
-    distributions("sell_limit_size"))
+    distributions("sell_limit_size"), 1000, buyPriceSizeCorrMatrix)
 
   private val buyRatio = ratios("buy_sell_order_ratio")
   private val buyVolRatio = ratios("buy_sell_volume_ratio")
@@ -96,9 +104,11 @@ class RandomTrader(ratios: Map[String, Double],
   private def generateLimitOrder(orderTime: LocalDateTime, side: Side.Value, midPrice: Double) = {
     val (price, size) = side match {
       case Side.Bid =>
-        buyLimitOrderMutliDistr.sample()
+        val (relativePrice, size) = buyLimitOrderMutliDistr.sample()
+        (midPrice - relativePrice, size)
       case Side.Ask =>
-        sellLimitOrderMutliDistr.sample()
+        val (relativePrice, size) = sellLimitOrderMutliDistr.sample()
+        (midPrice + relativePrice, size)
     }
 
     LimitOrder(orderTime, side, this, price, size)

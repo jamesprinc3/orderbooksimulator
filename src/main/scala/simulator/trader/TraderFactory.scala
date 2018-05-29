@@ -2,12 +2,7 @@ package simulator.trader
 
 import java.time.LocalDateTime
 
-import breeze.stats.distributions.{
-  ContinuousDistr,
-  Exponential,
-  LogNormal,
-  RandBasis
-}
+import breeze.stats.distributions.RandBasis
 import com.typesafe.scalalogging.Logger
 import simulator.{Side, TransformedDistr}
 
@@ -36,9 +31,11 @@ object TraderFactory {
     new HandsOffTrader(params)
   }
 
-  def getRandomTraders(number: Int,
-      ratios: Map[String, Double],
-      distributions: Map[String, TransformedDistr]): List[RandomTrader] = {
+  def getRandomTraders(
+                        number: Int,
+                        ratios: Map[String, Double],
+                        correlations: Map[String, Double],
+                        distributions: Map[String, TransformedDistr]): List[RandomTrader] = {
 
     val totalBalance = 0
     val totalHoldings = 0
@@ -52,9 +49,11 @@ object TraderFactory {
         logger.info("Random seed: " + seed)
         implicit val basis: RandBasis = RandBasis.withSeed(seed)
 
+        logger.info("Ratios: " + distributions)
+        logger.info("Correlations: " + distributions)
         logger.info("Distributions: " + distributions)
 
-        new RandomTrader(ratios, distributions, traderParams)
+        new RandomTrader(ratios, correlations, distributions, traderParams)
       })
       .toList
   }

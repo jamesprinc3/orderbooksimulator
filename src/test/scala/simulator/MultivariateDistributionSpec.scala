@@ -91,6 +91,24 @@ class MultivariateDistributionSpec extends FlatSpec {
     assert(residual.toArray.map(r => math.abs(r)).sum < 0.1)
   }
 
+  it should "produce values with correct covariance when after exceeding preloaded samples" in {
+    val numSamples = 10000
+
+    val distr = new MultivariateDistribution(d1, d2, numSamples, covMatrix)
+    val samples1 = Range(0, numSamples + 1).map(_ => distr.sample())
+    val samples2 = Range(0, numSamples + 1).map(_ => distr.sample())
+
+    val samples = samples1 ++ samples2
+
+    val unzipped = samples.unzip
+    val samplesMatrix = DenseMatrix(unzipped._1, unzipped._2).t
+
+    val sampleCovMat = cov(samplesMatrix)
+    val residual = sampleCovMat - covMatrix
+
+    assert(residual.toArray.map(r => math.abs(r)).sum < 0.1)
+  }
+
   "getCorrelatedSamples" should "produce values with correct covariance" in {
     val numSamples = 10000
 

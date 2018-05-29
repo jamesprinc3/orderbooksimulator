@@ -60,14 +60,16 @@ object Main {
 
       val traders = TraderFactory.getRandomTraders(numTraders,
                                                    config.ratios,
+        config.correlations,
                                                    config.distributions)
       val orderBook = getOrderBook(orders)
       val simulator =
-        new DiscreteEventSimulator(startTime,
-                                   startTime.plusNanos((config.simulationSeconds * 1e9).toLong),
-                                   config.ratios("buy_sell_cancel_ratio"),
-                                   traders,
-                                   List(orderBook))
+        new DiscreteEventSimulator(
+          startTime,
+          startTime.plusNanos((config.simulationSeconds * 1e9).toLong),
+          config.ratios("buy_sell_cancel_ratio"),
+          traders,
+          List(orderBook))
 
       val sim_t0 = System.nanoTime()
 
@@ -80,17 +82,15 @@ object Main {
         logger.debug(
           s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
 
-
         orderBook.transactionLog.export(simRoot + simulatorNumber + "/")
 
         // Only write out per-trader data if multiple traders
-        if (numTraders > 1){
+        if (numTraders > 1) {
           traders.foreach(
             t =>
               t.getTransactionLog.export(
                 simRoot + simulatorNumber + "/" + t.id.toString))
         }
-
 
         simsCompleted.incrementAndGet()
       } catch {
