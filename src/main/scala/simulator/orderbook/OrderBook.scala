@@ -45,7 +45,7 @@ class OrderBook(val askSide: OrderBookSide,
     bidSide.getVolume + askSide.getVolume
   }
 
-  def getPrice: Double = {
+  def getMidPrice: Double = {
     (getBidPrice + getAskPrice) / 2
   }
 

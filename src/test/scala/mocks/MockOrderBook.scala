@@ -21,7 +21,9 @@ class MockOrderBook()
 
   override def getVolume: Double = { 0 }
 
-  override def getPrice: Double = { 0 }
+  override def getMidPrice: Double = {
+    0
+  }
 
   override def submitOrder(order: Order, checkTime: Boolean = true, commitLog: Boolean = true): Unit = {}
 

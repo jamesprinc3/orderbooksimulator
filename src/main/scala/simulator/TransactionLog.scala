@@ -2,6 +2,7 @@ package simulator
 
 import java.io.File
 import java.nio.file.{Files, Paths}
+import java.time.LocalDateTime
 
 import com.github.tototoshi.csv.CSVWriter
 import simulator.events.{Cancel, Trade}
@@ -14,6 +15,7 @@ class TransactionLog() {
   var trades: ListBuffer[Trade] = ListBuffer()
   var orders: ListBuffer[Order] = ListBuffer()
   var cancels: ListBuffer[Cancel] = ListBuffer()
+  var midPrices: ListBuffer[(LocalDateTime, Double)] = ListBuffer[(LocalDateTime, Double)]()
 
   def addTrade(trade: Trade): Unit = {
     trades += trade
@@ -27,9 +29,20 @@ class TransactionLog() {
     cancels += cancel
   }
 
+  def addMidprice(time: LocalDateTime, midPrice: Double) = {
+    midPrices += (time -> midPrice)
+  }
+
   def export(fileDir: String): Unit = {
     ensureDirectoryExists(fileDir)
 
+    writeOrderCsv(fileDir)
+    writeTradeCsv(fileDir)
+    writeCancelCsv(fileDir)
+    writeMidpriceCsv(fileDir)
+  }
+
+  private def writeOrderCsv(fileDir: String) = {
     val orderHeader =
       List("order_type", "time", "side", "trader_id", "price", "size")
     val orderData: Seq[Seq[String]] = orders.map {
@@ -38,14 +51,16 @@ class TransactionLog() {
     }
 
     writeEvents(fileDir + "orders.csv", orderHeader, orderData)
+  }
 
+  private def writeTradeCsv(fileDir: String) = {
     val tradeHeader = List("time",
-                           "buyer_id",
-                           "buyer_order_id",
-                           "seller_id",
-                           "seller_order_id",
-                           "price",
-                           "size")
+      "buyer_id",
+      "buyer_order_id",
+      "seller_id",
+      "seller_order_id",
+      "price",
+      "size")
     val tradeData = trades.map(
       trade =>
         List(
@@ -56,16 +71,18 @@ class TransactionLog() {
           trade.sellerOrderId.toString,
           trade.price.toString,
           trade.size.toString
-      ))
+        ))
     writeEvents(fileDir + "trades.csv", tradeHeader, tradeData)
+  }
 
+  private def writeCancelCsv(fileDir: String) = {
     val cancelHeader = List("time",
-                            "arrivalTime",
-                            "side",
-                            "trader_id",
-                            "order_id",
-                            "price",
-                            "size")
+      "arrivalTime",
+      "side",
+      "trader_id",
+      "order_id",
+      "price",
+      "size")
     val cancelData: Seq[Seq[String]] = cancels.map(
       cancel => {
         Seq(
@@ -80,6 +97,17 @@ class TransactionLog() {
       }
     )
     writeEvents(fileDir + "cancels.csv", cancelHeader, cancelData)
+  }
+
+  private def writeMidpriceCsv(fileDir: String) = {
+    val midPriceHeader =
+      List("time", "price")
+    val midPriceData: Seq[Seq[String]] = midPrices.map { kv => {
+      Seq(kv._1.toString, kv._2.toString)
+    }
+    }.toSeq
+
+    writeEvents(fileDir + "midprice.csv", midPriceHeader, midPriceData)
   }
 
   private def ensureDirectoryExists(dir: String): Unit = {

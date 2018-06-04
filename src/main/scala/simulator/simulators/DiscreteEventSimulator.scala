@@ -11,7 +11,6 @@ import simulator.trader.Trader
 import scala.collection.mutable
 import scala.collection.mutable.PriorityQueue
 import scala.util.Random
-import scala.util.control.NonFatal
 
 class DiscreteEventSimulator(startTime: LocalDateTime,
                              endTime: LocalDateTime,
@@ -34,6 +33,8 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
     new LogNormal(3.11, 0.79)
   private val sellOrderPriceCancellationDistribution =
     new LogNormal(5.26, 0.38)
+
+  private var numEvents = 0
 
   override def endCondition(): Boolean = {
     val currentTimeExceedsEndTime = virtualTime.isAfter(endTime)
@@ -58,10 +59,16 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
       val newTime = event._1
 
       if (newTime.isBefore(virtualTime)) {
-        logger.error("Time Machine mode")
-        throw new IllegalStateException("Time Machine mode")
+        val errString = "Time Machine mode"
+        logger.error(errString)
+        throw new IllegalStateException(errString)
       }
-//      virtualTime = newTime
+      numEvents += 1
+      if (numEvents % 50 == 0) {
+        val orderbook = orderBooks.head
+        orderbook.transactionLog.addMidprice(newTime, orderbook.getMidPrice)
+      }
+
       step(newTime)
 
       // Update the time that each order book sees
@@ -79,10 +86,8 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
       val eventsToSubmit =
         event._2.step(virtualTime, orderBooks)
 
-      // Queue up the events
-//      if (eventQueue.length < 100) {
-        eventsToSubmit.foreach(eventQueue.enqueue(_))
-//      }
+      eventsToSubmit.foreach(eventQueue.enqueue(_))
+
     } catch {
       case e: IllegalStateException => throw e
 //      case NonFatal(t) => logger.error("We haz error: " + t)
@@ -99,7 +104,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
       orderBook.askSide.getActiveOrders
     }
     if (validOrders.nonEmpty) {
-      val midPrice = orderBook.getPrice
+      val midPrice = orderBook.getMidPrice
 
       val targetPrice = if (isBuySide) {
         midPrice - buyOrderPriceCancellationDistribution.sample()

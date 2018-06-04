@@ -84,7 +84,7 @@ class RandomTrader(ratios: Map[String, Double],
     : List[(LocalDateTime, RandomTrader, OrderBook, Order)] = {
 
 //    val priceSigma = 0.001 //k * 0.01 //orderBook.getVolatility(volatilityTicks)
-    val midPrice = orderBook.getPrice
+val midPrice = orderBook.getMidPrice
     val orderTime = generateOrderTime()
 
     val side = if (Random.nextFloat() < buyRatio) {
@@ -148,7 +148,7 @@ class RandomTrader(ratios: Map[String, Double],
       case Side.Ask => midPrice + sample
     }
 
-    if (price <= 0 || price.isNaN || price.isInfinite || price > midPrice * 3) {
+    if (price <= 0 || price.isNaN || price.isInfinite) {
       generateOrderPrice(side, midPrice)
     } else {
       price
