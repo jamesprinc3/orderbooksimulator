@@ -55,7 +55,7 @@ class OrderBookLog() {
   }
 
   private def writeTradeCsv(fileDir: String) = {
-    val tradeHeader = trades.toCsvHeader
+    val tradeHeader = Trade.getCsvHeader
     val tradeData = trades.toCsvString
     writeEvents(fileDir + "trades.csv", tradeHeader, tradeData)
   }

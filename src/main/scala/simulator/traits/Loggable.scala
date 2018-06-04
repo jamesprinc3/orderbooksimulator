@@ -8,7 +8,13 @@ object Loggable {
 
 trait Loggable {
 
-  def toCsvString: Seq[String]
+  implicit val mirror = scala.reflect.runtime.currentMirror
 
-  def toCsvHeader: Seq[String]
+  def toCsvString: Seq[String] = {
+    Seq()
+  }
+
+  def getCsvHeader: Seq[String] = {
+    Seq()
+  }
 }

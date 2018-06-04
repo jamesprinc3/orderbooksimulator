@@ -8,6 +8,7 @@ import ch.qos.logback.classic.Logger
 import com.typesafe.config
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
+import simulator.logs.LogWriter
 import simulator.orderbook.OrderBookFactory
 import simulator.orderbook.OrderBookFactory.getOrderBook
 import simulator.simulators.{DiscreteEventSimulator, RandomWalkSimulator}
@@ -33,10 +34,13 @@ object Main {
     val replicationIndices = getReplicationIndices(globalConfig)
 
 
-    replicationIndices.foreach(_ => {
+    replicationIndices.foreach(x => {
 
       val randomWalkSim = new RandomWalkSimulator(100, 100)
+      randomWalkSim.run()
 
+      print(randomWalkSim.log.toCsvString)
+      LogWriter.write(randomWalkSim.log, s"/Users/jamesprince/project-data/random-walk/$x.csv")
     })
 
 
