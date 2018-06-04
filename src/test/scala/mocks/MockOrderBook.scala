@@ -39,10 +39,6 @@ class MockOrderBook()
     askSide.getActiveOrders.size + bidSide.getActiveOrders.size
   }
 
-  override def getVolatility(ticks: Int): Double = {
-    0
-  }
-
   override def step(newTime: LocalDateTime): Unit = {}
 
 }

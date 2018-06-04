@@ -3,16 +3,18 @@ package simulator.orderbook
 import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.Logger
+import simulator.Side
 import simulator.events.{Cancel, OrderBookEntry}
+import simulator.logs.OrderBookLog
 import simulator.order.{LimitOrder, MarketOrder, Order}
-import simulator.{Side, Steppable, TransactionLog}
+import simulator.traits.Steppable
 
 import scala.concurrent.duration.Duration
 
 class OrderBook(val askSide: OrderBookSide,
                 val bidSide: OrderBookSide,
                 orders: List[Order] = List(),
-                val transactionLog: TransactionLog = new TransactionLog(),
+                val transactionLog: OrderBookLog = new OrderBookLog(),
                 startTime: LocalDateTime = LocalDateTime.now())
   // TODO: see if we can set this to some kind of default start time
     extends Steppable(startTime) {
@@ -93,35 +95,6 @@ class OrderBook(val askSide: OrderBookSide,
 
   def getNumberOfOrders: Int = {
     askSide.getActiveOrders.size + bidSide.getActiveOrders.size
-  }
-
-  def getVolatility(ticks: Int): Double = {
-    val windowCutoff = virtualTime.minusNanos(_tickLength.toNanos * ticks)
-
-    val lastTradeBeforeWindow = transactionLog.trades
-      .find(trade => trade.time.isBefore(windowCutoff))
-
-    lastTradeBeforeWindow match {
-      case None => 0.01
-      case Some(_) =>
-        val validTrades = transactionLog.trades.filter(
-          trade =>
-            trade.time.isAfter(
-              virtualTime.minusNanos(_tickLength.toNanos * ticks)))
-
-        val prices = Range(0, ticks).map(n => {
-          val time = windowCutoff.plusNanos(_tickLength.toNanos * n)
-          val price = validTrades
-            .find(trade => !trade.time.isAfter(time))
-            .getOrElse(lastTradeBeforeWindow.get)
-            .price
-
-          price
-        })
-
-        val mean = prices.sum / ticks
-        prices.map(a => math.pow(a - mean, 2)).sum / prices.size
-    }
   }
 
   override def step(newTime: LocalDateTime): Unit = {

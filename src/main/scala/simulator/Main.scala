@@ -5,11 +5,12 @@ import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicInteger
 
 import ch.qos.logback.classic.Logger
+import com.typesafe.config
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 import simulator.orderbook.OrderBookFactory
 import simulator.orderbook.OrderBookFactory.getOrderBook
-import simulator.simulators.DiscreteEventSimulator
+import simulator.simulators.{DiscreteEventSimulator, RandomWalkSimulator}
 import simulator.trader.TraderFactory
 
 import scala.reflect.io.Path
@@ -29,6 +30,27 @@ object Main {
 
     logger.debug(globalConfig.toString)
 
+    val replicationIndices = getReplicationIndices(globalConfig)
+
+
+    replicationIndices.foreach(_ => {
+
+      val randomWalkSim = new RandomWalkSimulator(100, 100)
+
+    })
+
+
+  }
+
+  private def getReplicationIndices(globalConfig: Config) = {
+    if (globalConfig.parallel) {
+      Range(0, globalConfig.numReplications).par
+    } else {
+      Range(0, globalConfig.numReplications)
+    }
+  }
+
+  private def simulateOrderBooks(conf: config.Config, globalConfig: Config): Unit = {
     val simRoot = globalConfig.simRoot
     val simPath = Path(simRoot)
 
@@ -40,11 +62,7 @@ object Main {
 
     println(globalConfig)
 
-    val simIndices = if (globalConfig.parallel) {
-      Range(0, globalConfig.numSimulations).par
-    } else {
-      Range(0, globalConfig.numSimulations)
-    }
+    val replicationIndices = getReplicationIndices(globalConfig)
 
     val simsCompleted = new AtomicInteger(0)
 
@@ -53,15 +71,15 @@ object Main {
     val orders =
       OrderBookFactory.importOrders(globalConfig.orderBookPath, startTime)
 
-    simIndices.foreach(simulatorNumber => {
+    replicationIndices.foreach(simulatorNumber => {
 
       val config = parseConfig(conf)
       val numTraders = config.numTraders
 
       val traders = TraderFactory.getRandomTraders(numTraders,
-                                                   config.ratios,
+        config.ratios,
         config.correlations,
-                                                   config.distributions)
+        config.distributions)
       val orderBook = getOrderBook(orders)
       val simulator =
         new DiscreteEventSimulator(
@@ -101,7 +119,7 @@ object Main {
 
     logger.info(
       simsCompleted
-        .intValue() + "/" + globalConfig.numSimulations + " simulations ran")
+        .intValue() + "/" + globalConfig.numReplications + " simulations ran")
 
     val prog_t1 = System.nanoTime()
     logger.info(

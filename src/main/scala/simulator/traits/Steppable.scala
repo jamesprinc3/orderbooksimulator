@@ -1,4 +1,4 @@
-package simulator
+package simulator.traits
 
 import java.time.LocalDateTime
 

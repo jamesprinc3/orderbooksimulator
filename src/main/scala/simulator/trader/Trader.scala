@@ -3,10 +3,11 @@ package simulator.trader
 import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.Logger
+import simulator.Side
 import simulator.events.{OrderBookEntry, Trade}
+import simulator.logs.OrderBookLog
 import simulator.order.Order
 import simulator.orderbook.OrderBook
-import simulator.{Side, TransactionLog}
 
 abstract class Trader(traderParams: TraderParams) {
 
@@ -15,7 +16,7 @@ abstract class Trader(traderParams: TraderParams) {
   private var holdings: Double = traderParams.initialHoldings
   protected var virtualTime: LocalDateTime = LocalDateTime.now()
   protected var openOrders: Set[OrderBookEntry] = Set[OrderBookEntry]()
-  protected var transactionLog = new TransactionLog
+  protected var transactionLog = new OrderBookLog
 
   private val logger = Logger(this.getClass)
 
@@ -97,7 +98,7 @@ abstract class Trader(traderParams: TraderParams) {
     openOrders
   }
 
-  def getTransactionLog: TransactionLog = {
+  def getTransactionLog: OrderBookLog = {
     transactionLog
   }
 

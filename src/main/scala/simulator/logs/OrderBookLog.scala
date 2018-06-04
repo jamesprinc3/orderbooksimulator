@@ -1,4 +1,4 @@
-package simulator
+package simulator.logs
 
 import java.io.File
 import java.nio.file.{Files, Paths}
@@ -10,15 +10,16 @@ import simulator.order.{LimitOrder, MarketOrder, Order}
 
 import scala.collection.mutable.ListBuffer
 
-class TransactionLog() {
+class OrderBookLog() {
 
-  var trades: ListBuffer[Trade] = ListBuffer()
+  //  var trades: ListBuffer[Trade] = ListBuffer()
+  val trades: Log[Trade] = new Log[Trade]
   var orders: ListBuffer[Order] = ListBuffer()
   var cancels: ListBuffer[Cancel] = ListBuffer()
   var midPrices: ListBuffer[(LocalDateTime, Double)] = ListBuffer[(LocalDateTime, Double)]()
 
   def addTrade(trade: Trade): Unit = {
-    trades += trade
+    trades.add(trade)
   }
 
   def addOrder(order: Order): Unit = {
@@ -54,24 +55,8 @@ class TransactionLog() {
   }
 
   private def writeTradeCsv(fileDir: String) = {
-    val tradeHeader = List("time",
-      "buyer_id",
-      "buyer_order_id",
-      "seller_id",
-      "seller_order_id",
-      "price",
-      "size")
-    val tradeData = trades.map(
-      trade =>
-        List(
-          trade.time.toString,
-          trade.buyerId.toString,
-          trade.buyerOrderId.toString,
-          trade.sellerId.toString,
-          trade.sellerOrderId.toString,
-          trade.price.toString,
-          trade.size.toString
-        ))
+    val tradeHeader = trades.toCsvHeader
+    val tradeData = trades.toCsvString
     writeEvents(fileDir + "trades.csv", tradeHeader, tradeData)
   }
 
@@ -131,7 +116,7 @@ class TransactionLog() {
     res += orders.map(_.toString).mkString("\n") + "\n\n"
 
     res += "Trades made:\n"
-    res += trades.map(_.toString).mkString("\n") + "\n\n"
+    res += trades.toCsvString.map(line => line.mkString(",")).mkString("\n")
 
     res += "Cancels made:\n"
     res += cancels.map(_.toString).mkString("\n")

@@ -7,7 +7,7 @@ import spray.json._
 
 import scala.io.Source
 
-case class Config(numSimulations: Int = 1,
+case class Config(numReplications: Int = 1,
                   simulationSeconds: Int = 300,
                   numTraders: Int = 1,
                   parallel: Boolean = false,

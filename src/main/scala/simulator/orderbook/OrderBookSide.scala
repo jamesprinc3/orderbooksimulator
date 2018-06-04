@@ -3,14 +3,14 @@ package simulator.orderbook
 import java.time.LocalDateTime
 
 import com.typesafe.scalalogging.Logger
-import simulator.{Side, Steppable}
+import simulator.Side
 import simulator.events.{OrderBookEntry, Trade}
 import simulator.order.{LimitOrder, MarketOrder, Order}
 import simulator.orderbook.priority.Priority
 import simulator.trader.Trader
+import simulator.traits.Steppable
 
 import scala.collection.mutable
-import util.control.Breaks._
 
 class OrderBookSide(side: Side.Value,
                     priority: Priority,

@@ -1,17 +1,8 @@
 package simulator.simulators
 
-import java.time.LocalDateTime
+trait Simulator {
 
-import simulator.{Steppable, TransactionLog}
-import simulator.orderbook.OrderBook
-import simulator.trader.Trader
-
-abstract class Simulator(startTime: LocalDateTime,
-                         traders: List[Trader],
-                         orderBooks: List[OrderBook])
-    extends Steppable(startTime) {
-
-//  protected var virtualTime: LocalDateTime = startTime
+  private val logger = com.typesafe.scalalogging.Logger(this.getClass)
 
   def endCondition(): Boolean
 
@@ -26,11 +17,9 @@ abstract class Simulator(startTime: LocalDateTime,
     while (!endCondition()) {
       updateState()
     }
+    val t1 = System.nanoTime()
+
+    logger.info(s"Simulation took ${(t1 - t0) / 1e9} seconds")
 
   }
-
-  def getTransactionLogs: List[TransactionLog] = {
-    orderBooks.map(_.transactionLog)
-  }
-
 }

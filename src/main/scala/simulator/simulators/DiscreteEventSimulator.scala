@@ -17,7 +17,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
                              buyCancelRatio: Double,
                              traders: List[Trader],
                              orderBooks: List[OrderBook])
-    extends Simulator(startTime, traders, orderBooks) {
+  extends OrderBookSimulator(startTime, traders, orderBooks) {
 
 
   implicit val localDateTimeOrdering: Ordering[LocalDateTime] =
