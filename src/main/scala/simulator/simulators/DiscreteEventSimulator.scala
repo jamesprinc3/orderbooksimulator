@@ -64,10 +64,11 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
         throw new IllegalStateException(errString)
       }
       numEvents += 1
-      if (numEvents % 50 == 0) {
+      //      if (numEvents % 50 == 0) {
         val orderbook = orderBooks.head
-        orderbook.transactionLog.addMidprice(newTime, orderbook.getMidPrice)
-      }
+      orderbook.orderBookLog.addMidprice(newTime, orderbook.getMidPrice)
+      orderbook.orderBookLog.addSpread(newTime, orderbook.getSpread)
+      //      }
 
       step(newTime)
 

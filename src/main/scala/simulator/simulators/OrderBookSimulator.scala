@@ -12,7 +12,7 @@ abstract class OrderBookSimulator(startTime: LocalDateTime,
                                   orderBooks: List[OrderBook]) extends Steppable(startTime) with Simulator {
 
   def getTransactionLogs: List[OrderBookLog] = {
-    orderBooks.map(_.transactionLog)
+    orderBooks.map(_.orderBookLog)
   }
 
 }

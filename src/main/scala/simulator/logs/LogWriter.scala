@@ -5,6 +5,7 @@ import simulator.events.Price
 
 object LogWriter {
 
+  // TODO: make this generic
   def write(log: Log[Price], filePath: String) = {
 
     val tradeHeader = Price.getCsvHeader
@@ -12,9 +13,9 @@ object LogWriter {
     writeEvents(filePath, tradeHeader, tradeData)
   }
 
-  private def writeEvents(filePath: String,
-                          header: Seq[String],
-                          data: Seq[Seq[String]]): Unit = {
+  def writeEvents(filePath: String,
+                  header: Seq[String],
+                  data: Seq[Seq[String]]): Unit = {
 
     val writer = CSVWriter.open(filePath)
 

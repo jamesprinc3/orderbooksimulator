@@ -31,19 +31,22 @@ object Main {
 
     logger.debug(globalConfig.toString)
 
-    val replicationIndices = getReplicationIndices(globalConfig)
 
+    simulateOrderBooks(conf: config.Config, globalConfig: Config)
+
+  }
+
+  private def randomWalk(globalConfig: Config) = {
+    val replicationIndices = getReplicationIndices(globalConfig)
 
     replicationIndices.foreach(x => {
 
       val randomWalkSim = new RandomWalkSimulator(100, 100)
       randomWalkSim.run()
 
-      print(randomWalkSim.log.toCsvString)
+      //      print(randomWalkSim.log.toCsvString)
       LogWriter.write(randomWalkSim.log, s"/Users/jamesprince/project-data/random-walk/$x.csv")
     })
-
-
   }
 
   private def getReplicationIndices(globalConfig: Config) = {
@@ -98,13 +101,13 @@ object Main {
       try {
         simulator.run()
 
-        logger.debug(orderBook.transactionLog.toString)
+        logger.debug(orderBook.orderBookLog.toString)
 
         val sim_t1 = System.nanoTime()
         logger.debug(
           s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
 
-        orderBook.transactionLog.export(simRoot + simulatorNumber + "/")
+        orderBook.orderBookLog.export(simRoot + simulatorNumber + "/")
 
         // Only write out per-trader data if multiple traders
         if (numTraders > 1) {

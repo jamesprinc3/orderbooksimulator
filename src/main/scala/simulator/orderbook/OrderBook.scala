@@ -14,16 +14,17 @@ import scala.concurrent.duration.Duration
 class OrderBook(val askSide: OrderBookSide,
                 val bidSide: OrderBookSide,
                 orders: List[Order] = List(),
-                val transactionLog: OrderBookLog = new OrderBookLog(),
+                val orderBookLog: OrderBookLog = new OrderBookLog(),
                 startTime: LocalDateTime = LocalDateTime.now())
-  // TODO: see if we can set this to some kind of default start time
+// TODO: see if we can set this to some kind of default start time
     extends Steppable(startTime) {
 
   private val _tickLength = Duration.fromNanos(1e6)
   // TODO: add minPrice / maxPrice?
   // Negative prices don't make sense anyway, so should probably put this in
 
-  orders.foreach(order => submitOrder(order, checkTime = false, commitLog = false))
+  orders.foreach(order =>
+    submitOrder(order, checkTime = false, commitLog = false))
 
   private val logger = Logger(this.getClass)
 
@@ -51,13 +52,17 @@ class OrderBook(val askSide: OrderBookSide,
     (getBidPrice + getAskPrice) / 2
   }
 
-  def submitOrder(order: Order, checkTime: Boolean = true, commitLog: Boolean = true): Unit = {
+  def getSpread: Double = getAskPrice - getBidPrice
+
+  def submitOrder(order: Order,
+                  checkTime: Boolean = true,
+                  commitLog: Boolean = true): Unit = {
     if (checkTime && order.time != virtualTime) {
       throw new IllegalStateException("Times do not match")
     }
 
     if (commitLog) {
-      transactionLog.addOrder(order)
+      orderBookLog.addOrder(order)
     }
 
     order.trader.updateState(order)
@@ -69,7 +74,7 @@ class OrderBook(val askSide: OrderBookSide,
     }
 
     trades match {
-      case Some(ts) => ts.foreach(transactionLog.addTrade)
+      case Some(ts) => ts.foreach(orderBookLog.addTrade)
       case None     =>
     }
 
@@ -86,7 +91,7 @@ class OrderBook(val askSide: OrderBookSide,
 
     if (cancelledOrder.isDefined) {
       val cancel = Cancel(virtualTime, cancelledOrder.get)
-      transactionLog.addCancel(cancel)
+      orderBookLog.addCancel(cancel)
       true
     } else {
       false
