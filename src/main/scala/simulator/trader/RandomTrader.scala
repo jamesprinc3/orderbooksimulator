@@ -3,9 +3,10 @@ import java.time.LocalDateTime
 
 import breeze.linalg._
 import com.typesafe.scalalogging.Logger
+import simulator.Side
 import simulator.order.{LimitOrder, MarketOrder, Order}
 import simulator.orderbook.OrderBook
-import simulator.{MultivariateDistribution, Side, TransformedDistr}
+import simulator.sampling.{MultivariateDistribution, TransformedDistr}
 
 import scala.util.Random
 

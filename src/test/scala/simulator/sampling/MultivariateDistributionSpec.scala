@@ -1,4 +1,4 @@
-package simulator
+package simulator.sampling
 
 import breeze.linalg._
 import breeze.stats._

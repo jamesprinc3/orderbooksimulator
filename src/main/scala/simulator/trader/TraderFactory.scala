@@ -4,7 +4,8 @@ import java.time.LocalDateTime
 
 import breeze.stats.distributions.RandBasis
 import com.typesafe.scalalogging.Logger
-import simulator.{Side, TransformedDistr}
+import simulator.Side
+import simulator.sampling.TransformedDistr
 
 import scala.util.Random
 

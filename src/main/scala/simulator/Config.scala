@@ -3,6 +3,7 @@ package simulator
 import breeze.stats.distributions._
 import ch.qos.logback.classic.Level
 import com.typesafe.scalalogging.Logger
+import simulator.sampling.{InverseCdfSampler, TransformedDistr}
 import spray.json._
 
 import scala.io.Source
@@ -16,10 +17,12 @@ case class Config(numReplications: Int = 1,
                   orderBookPath: String = "",
                   ratios: Map[String, Double],
                   correlations: Map[String, Double],
+                  discreteDistributions: Map[String, InverseCdfSampler],
                   distributions: Map[String, TransformedDistr] =
                     Map[String, TransformedDistr]())
 
 object Config {
+
 
   def init(numSimulations: Int,
            simulationSeconds: Int,
@@ -37,6 +40,7 @@ object Config {
     val ratios = parseRatios(jsonAst)
     val correlations = parseCorrelations(jsonAst)
     val distributions = parseDistributions(jsonAst)
+    val inverseCdfs = parseInverseCdfs(jsonAst)
 
     Config(numSimulations,
            simulationSeconds,
@@ -47,6 +51,7 @@ object Config {
            orderBookPath,
            ratios,
       correlations,
+      inverseCdfs,
            distributions)
   }
 
@@ -160,6 +165,10 @@ object Config {
       })
 
     corrs
+  }
+
+  def parseInverseCdfs(jsonAst: JsValue) = {
+    Map[String, InverseCdfSampler]()
   }
 
   def parseDistributions(jsonAst: JsValue): Map[String, TransformedDistr] = {

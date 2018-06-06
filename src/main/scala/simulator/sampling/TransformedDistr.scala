@@ -1,4 +1,4 @@
-package simulator
+package simulator.sampling
 
 import breeze.stats.distributions.ContinuousDistr
 
