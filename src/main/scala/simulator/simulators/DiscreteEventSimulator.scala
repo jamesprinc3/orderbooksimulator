@@ -4,6 +4,7 @@ import java.time.{LocalDateTime, ZoneOffset}
 
 import breeze.stats.distributions.LogNormal
 import com.typesafe.scalalogging.Logger
+import simulator.Side
 import simulator.order.Order
 import simulator.orderbook.OrderBook
 import simulator.trader.Trader
@@ -115,13 +116,20 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
     if (validOrders.nonEmpty) {
       val midPrice = orderBook.getMidPrice
 
-      val targetPrice = if (isBuySide) {
-        midPrice - buyOrderPriceCancellationDistribution.sample()
+      //      val targetPrice = if (isBuySide) {
+      //        midPrice - buyOrderPriceCancellationDistribution.sample()
+      //      } else {
+      //        midPrice + sellOrderPriceCancellationDistribution.sample()
+      //      }
+      val sideToCancel = if (isBuySide) {
+        Side.Bid
       } else {
-        midPrice + sellOrderPriceCancellationDistribution.sample()
+        Side.Ask
       }
 
-      orderBook.cancelOrder(validOrders.head.orderId)
+      orderBook.cancelHead(sideToCancel)
+
+      //      orderBook.cancelOrder(validOrders.head.orderId)
     }
   }
 

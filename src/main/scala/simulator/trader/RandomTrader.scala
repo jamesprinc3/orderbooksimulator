@@ -18,15 +18,20 @@ import scala.util.Random
 class RandomTrader(ratios: Map[String, Double],
                    correlations: Map[String, Double],
                    distributions: Map[String, TransformedDistr],
+                   inverseCdfDistributions: Map[String, TransformedDistr],
                    traderParams: TraderParams)
     extends Trader(traderParams) {
 
   private val logger = Logger(this.getClass)
   private val buyPriceDistribution = distributions("buy_price")
   private val sellPriceDistribution = distributions("sell_price")
-  private val buyPriceRelativeDistribution = distributions("buy_price_relative")
-  private val sellPriceRelativeDistribution = distributions(
-    "sell_price_relative")
+  private val buyPriceRelativeDistribution = inverseCdfDistributions("buy")
+  //  private val sellPriceRelativeDistribution = distributions(
+  //    "sell_price_relative")
+  private val sellPriceRelativeDistribution = inverseCdfDistributions("sell")
+
+
+
   private val buyOrderPriceCancellationDistribution = distributions(
     "buy_cancel_price")
   private val sellOrderPriceCancellationDistribution = distributions(

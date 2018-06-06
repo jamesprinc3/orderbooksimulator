@@ -137,6 +137,16 @@ class OrderBook(val askSide: OrderBookSide,
     }
   }
 
+  def cancelHead(side: Side.Value): Unit = {
+    val cancelledOrder = side match {
+      case Side.Bid => bidSide.cancelHead()
+      case Side.Ask => askSide.cancelHead()
+    }
+
+    val cancel = Cancel(virtualTime, cancelledOrder)
+    orderBookLog.addCancel(cancel)
+  }
+
   def getNumberOfOrders: Int = {
     askSide.getActiveOrders.size + bidSide.getActiveOrders.size
   }

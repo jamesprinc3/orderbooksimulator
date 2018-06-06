@@ -36,6 +36,7 @@ object TraderFactory {
                         number: Int,
                         ratios: Map[String, Double],
                         correlations: Map[String, Double],
+                        inverseCdfDistributions: Map[String, TransformedDistr],
                         distributions: Map[String, TransformedDistr]): List[RandomTrader] = {
 
     val totalBalance = 0
@@ -47,14 +48,14 @@ object TraderFactory {
                                         getWealth(totalBalance, number, x),
                                         getWealth(totalHoldings, number, x))
         val seed = Random.nextInt()
-        logger.info("Random seed: " + seed)
+        //        logger.info("Random seed: " + seed)
         implicit val basis: RandBasis = RandBasis.withSeed(seed)
 
-        logger.info("Ratios: " + distributions)
-        logger.info("Correlations: " + distributions)
-        logger.info("Distributions: " + distributions)
+        //        logger.info("Ratios: " + distributions)
+        //        logger.info("Correlations: " + distributions)
+        //        logger.info("Distributions: " + distributions)
 
-        new RandomTrader(ratios, correlations, distributions, traderParams)
+        new RandomTrader(ratios, correlations, distributions, inverseCdfDistributions, traderParams)
       })
       .toList
   }

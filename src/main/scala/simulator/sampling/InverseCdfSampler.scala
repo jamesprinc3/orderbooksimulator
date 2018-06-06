@@ -1,13 +1,13 @@
 package simulator.sampling
 
-import breeze.stats.distributions.Uniform
+import breeze.stats.distributions.{ContinuousDistr, Uniform}
 
 import scala.math.BigDecimal.RoundingMode
 
 /**
   * PRE: Assume each entry in pairs is of form (boundary, sample)
   */
-class InverseCdfSampler(pairs: Seq[(BigDecimal, Double)], bucketWidth: BigDecimal) {
+class InverseCdfSampler(pairs: Seq[(BigDecimal, Double)], bucketWidth: BigDecimal) extends ContinuousDistr[Double] {
 
   val hashMap: Map[BigDecimal, Double] = generateHashMap(pairs, bucketWidth)
 
@@ -34,10 +34,16 @@ class InverseCdfSampler(pairs: Seq[(BigDecimal, Double)], bucketWidth: BigDecima
     sampleMap
   }
 
-  def sample(): Double = {
+  override def sample(): Double = {
     val uniformSample = Uniform(0, 1).sample()
 
     hashMap(BigDecimal.decimal(uniformSample).setScale(2, RoundingMode.HALF_UP))
   }
 
+  // TODO: maybe these could be given some more meaningful values?
+  override def unnormalizedLogPdf(x: Double): Double = 0
+
+  override def logNormalizer: Double = 0
+
+  override def draw(): Double = 0
 }

@@ -17,6 +17,7 @@ class OrderBookSide(side: Side.Value,
                     orders: List[OrderBookEntry] = List())
     extends Steppable(LocalDateTime.now()) {
 
+
   private val logger = Logger(this.getClass)
   private implicit val ordering: Ordering[OrderBookEntry] = priority.ordering
   private var _orderId = side match {
@@ -29,6 +30,12 @@ class OrderBookSide(side: Side.Value,
     _orderId += 2
 
     ret
+  }
+
+  private var activeOrders = mutable.TreeSet[OrderBookEntry]().++(orders)
+
+  def getActiveOrders: mutable.TreeSet[OrderBookEntry] = {
+    activeOrders
   }
 
   def submitOrder(order: Order): Option[List[Trade]] = {
@@ -44,12 +51,6 @@ class OrderBookSide(side: Side.Value,
       case MarketOrder(_, _, trader, size) =>
         addMarketOrder(trader, size)
     }
-  }
-
-  private var activeOrders = mutable.TreeSet[OrderBookEntry]().++(orders)
-
-  def getActiveOrders: mutable.TreeSet[OrderBookEntry] = {
-    activeOrders
   }
 
   // TODO: Error handling
@@ -138,6 +139,12 @@ class OrderBookSide(side: Side.Value,
   // TODO: consider accuracy of doubles...
   private def getDepth(price: Double): Double = {
     getOrdersAtPrice(price).map(_.size).sum
+  }
+
+  def cancelHead(): OrderBookEntry = {
+    val cancelledOrder = activeOrders.head
+    activeOrders -= activeOrders.head
+    cancelledOrder
   }
 
   def cancelOrder(orderId: Int): Option[OrderBookEntry] = {

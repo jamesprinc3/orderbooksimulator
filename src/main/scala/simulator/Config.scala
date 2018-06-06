@@ -7,6 +7,7 @@ import simulator.sampling.{InverseCdfSampler, TransformedDistr}
 import spray.json._
 
 import scala.io.Source
+import scala.math.BigDecimal.RoundingMode
 
 case class Config(numReplications: Int = 1,
                   simulationSeconds: Int = 300,
@@ -17,12 +18,11 @@ case class Config(numReplications: Int = 1,
                   orderBookPath: String = "",
                   ratios: Map[String, Double],
                   correlations: Map[String, Double],
-                  discreteDistributions: Map[String, InverseCdfSampler],
+                  inverseCdfDistributions: Map[String, TransformedDistr],
                   distributions: Map[String, TransformedDistr] =
                     Map[String, TransformedDistr]())
 
 object Config {
-
 
   def init(numSimulations: Int,
            simulationSeconds: Int,
@@ -167,8 +167,29 @@ object Config {
     corrs
   }
 
-  def parseInverseCdfs(jsonAst: JsValue) = {
-    Map[String, InverseCdfSampler]()
+  def parseInverseCdfs(jsonAst: JsValue): Map[String, TransformedDistr] = {
+    jsonAst.asJsObject
+      .fields("discreteDistributions")
+      .asJsObject
+      .fields
+      .map(obj => {
+        val xs = obj._2.asJsObject.fields("x") match {
+          case JsArray(a) =>
+            a.map {
+              case JsNumber(num) => num.toDouble
+            }
+        }
+        val cy = obj._2.asJsObject.fields("cy") match {
+          case JsArray(a) =>
+            a.map {
+              case JsNumber(num) => BigDecimal.decimal(num.toDouble).setScale(2, RoundingMode.HALF_UP)
+            }
+        }
+        val bucketWidth = BigDecimal.decimal(0.01)
+
+        (obj._1, new TransformedDistr(new InverseCdfSampler(cy zip xs, bucketWidth), 0, 1))
+      })
+    //    Map[String, TransformedDistr]()
   }
 
   def parseDistributions(jsonAst: JsValue): Map[String, TransformedDistr] = {

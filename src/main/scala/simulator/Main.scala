@@ -86,6 +86,7 @@ object Main {
       val traders = TraderFactory.getRandomTraders(numTraders,
         config.ratios,
         config.correlations,
+        config.inverseCdfDistributions,
         config.distributions)
       val orderBook = getOrderBook(orders)
       val simulator =
