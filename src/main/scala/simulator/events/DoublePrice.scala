@@ -4,13 +4,13 @@ import java.time.LocalDateTime
 
 import simulator.traits.Loggable
 
-object Spread extends Loggable {
+object DoublePrice extends Loggable {
   override def getCsvHeader: Seq[String] = {
-    Seq("time", "spread")
+    Seq("time", "price")
   }
 }
 
-case class Spread(time: LocalDateTime, price: Double) extends Loggable {
+case class DoublePrice(time: LocalDateTime, price: Double) extends Loggable {
   override def toCsvString() = {
     Seq(time.toString, price.toString)
   }

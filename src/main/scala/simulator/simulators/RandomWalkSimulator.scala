@@ -1,6 +1,6 @@
 package simulator.simulators
 
-import simulator.events.Price
+import simulator.events.IntPrice
 import simulator.logs.Log
 
 import scala.util.Random
@@ -10,7 +10,7 @@ class RandomWalkSimulator(startPrice: Int, maxSteps: Int) extends Simulator {
 
   private var steps = 0
   private var price = startPrice
-  val log = new Log[Price]
+  val log = new Log[IntPrice]
 
   override def endCondition(): Boolean = {
     steps >= maxSteps
@@ -23,7 +23,7 @@ class RandomWalkSimulator(startPrice: Int, maxSteps: Int) extends Simulator {
       price -= 1
     }
 
-    log.add(new Price(steps, price))
+    log.add(new IntPrice(steps, price))
 
     steps += 1
   }

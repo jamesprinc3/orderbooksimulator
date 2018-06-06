@@ -34,20 +34,21 @@ class OrderBookSpec extends FlatSpec with MockFactory {
   // TODO: make this into some kind of system constant
   "initialization" should "populate OrderBookSides with the correct orders" in {}
 
-  "submitOrder" should "submit a limit buy order" in {
+  "submitOrder" should "submit a limit buy order into empty book" in {
     val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
     orderBook.submitOrder(
-      LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize))
+      LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize), checkOrderSanity = false)
 
     assert(orderBook.getBidPrice == testPrice)
   }
 
-  it should "submit a sell order" in {
+
+  it should "submit a limit sell order into empty book" in {
     val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
     orderBook.submitOrder(
-      LimitOrder(testTime, Side.Ask, mockTrader, testPrice, testSize))
+      LimitOrder(testTime, Side.Ask, mockTrader, testPrice, testSize), checkOrderSanity = false)
 
     assert(orderBook.getAskPrice == testPrice)
   }
@@ -56,7 +57,7 @@ class OrderBookSpec extends FlatSpec with MockFactory {
     val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
     orderBook.submitOrder(
-      LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize))
+      LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize), checkOrderSanity = false)
 
     assert(orderBook.getBidSide.getActiveOrders.nonEmpty)
   }
@@ -65,20 +66,32 @@ class OrderBookSpec extends FlatSpec with MockFactory {
     val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
     orderBook.submitOrder(
-      LimitOrder(testTime, Side.Ask, mockTrader, testPrice, testSize))
+      LimitOrder(testTime, Side.Ask, mockTrader, testPrice, testSize), checkOrderSanity = false)
 
     assert(orderBook.getAskSide.getActiveOrders.nonEmpty)
   }
 
-  it should "can submit buy and sell orders without match" in {
+  it should "accept non-crossing limit orders" in {
     val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
 
     orderBook.submitOrder(
-      LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize))
+      LimitOrder(testTime, Side.Bid, mockTrader, testPrice, testSize), checkOrderSanity = false)
     orderBook.submitOrder(
-      LimitOrder(testTime, Side.Ask, mockTrader, testPrice + 1, testSize))
+      LimitOrder(testTime, Side.Ask, mockTrader, testPrice + 1, testSize), checkOrderSanity = false)
 
     assert(orderBook.getBidSide.getActiveOrders.nonEmpty)
+    assert(orderBook.getAskSide.getActiveOrders.nonEmpty)
+  }
+
+  it should "reject crossing limit order" in {
+    val orderBook = TestOrderBook.getEmptyOrderBook(mockPriority, mockPriority, testTime)
+
+    orderBook.submitOrder(
+      LimitOrder(testTime, Side.Ask, mockTrader, testPrice, testSize))
+    orderBook.submitOrder(
+      LimitOrder(testTime, Side.Bid, mockTrader, testPrice + 1, testSize))
+
+    assert(orderBook.getBidSide.getActiveOrders.isEmpty)
     assert(orderBook.getAskSide.getActiveOrders.nonEmpty)
   }
 

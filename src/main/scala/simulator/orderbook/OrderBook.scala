@@ -23,10 +23,20 @@ class OrderBook(val askSide: OrderBookSide,
   // TODO: add minPrice / maxPrice?
   // Negative prices don't make sense anyway, so should probably put this in
 
+  // Put the pre-existing orders into the order book.
+  // Having an empty order book because some checks to not make sense, so checkOrderSanity = false skips them.
   orders.foreach(order =>
-    submitOrder(order, checkTime = false, commitLog = false))
+    submitOrder(order, checkTime = false, commitLog = false, checkOrderSanity = false))
 
   private val logger = Logger(this.getClass)
+
+  def isValidState: Boolean = {
+    val bidLessAsk = getBidPrice < getAskPrice
+    val bidLessMid = getBidPrice < getMidPrice
+    val midLessAsk = getMidPrice < getAskPrice
+
+    bidLessAsk && bidLessMid && midLessAsk
+  }
 
   def getBidPrice: Double = {
     bidSide.getBestPrice.getOrElse(0)
@@ -56,26 +66,55 @@ class OrderBook(val askSide: OrderBookSide,
 
   def submitOrder(order: Order,
                   checkTime: Boolean = true,
-                  commitLog: Boolean = true): Unit = {
+                  commitLog: Boolean = true,
+                  checkOrderSanity: Boolean = true): Unit = {
+    if (orderIsSane(order, checkTime, checkOrderSanity)) {
+      if (commitLog) {
+        orderBookLog.addOrder(order)
+      }
+
+      order.trader.updateState(order)
+
+      val trades = (order.side, order) match {
+        case (Side.Bid, order: LimitOrder) => bidSide.submitOrder(order)
+        case (Side.Bid, order: MarketOrder) => askSide.submitOrder(order)
+        case (Side.Ask, order: LimitOrder) => askSide.submitOrder(order)
+        case (Side.Ask, order: MarketOrder) => bidSide.submitOrder(order)
+      }
+
+      trades match {
+        case Some(ts) => ts.foreach(orderBookLog.addTrade)
+        case None =>
+      }
+    }
+  }
+
+  private def orderIsSane(order: Order, checkTime: Boolean, checkOrder: Boolean): Boolean = {
     if (checkTime && order.time != virtualTime) {
       throw new IllegalStateException("Times do not match")
     }
 
-    if (commitLog) {
-      orderBookLog.addOrder(order)
-    }
+    if (checkOrder) {
+      order match {
+        case _: MarketOrder => true
+        case o: LimitOrder =>
+          val limitCrossesSpread = order.side match {
+            case Side.Bid =>
+              askSide.getBestPrice match {
+                case None => false
+                case Some(askPrice) => o.price > askPrice
+              }
+            case Side.Ask =>
+              bidSide.getBestPrice match {
+                case None => false
+                case Some(bidPrice) => o.price < bidPrice
+              }
+          }
 
-    order.trader.updateState(order)
-    val trades = (order.side, order) match {
-      case (Side.Bid, order: LimitOrder) => bidSide.submitOrder(order)
-      case (Side.Bid, order: MarketOrder) => askSide.submitOrder(order)
-      case (Side.Ask, order: LimitOrder) => askSide.submitOrder(order)
-      case (Side.Ask, order: MarketOrder) => bidSide.submitOrder(order)
-    }
-
-    trades match {
-      case Some(ts) => ts.foreach(orderBookLog.addTrade)
-      case None     =>
+          !limitCrossesSpread
+      }
+    } else {
+      true
     }
 
   }

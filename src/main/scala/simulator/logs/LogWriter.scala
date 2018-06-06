@@ -1,14 +1,14 @@
 package simulator.logs
 
 import com.github.tototoshi.csv.CSVWriter
-import simulator.events.Price
+import simulator.events.IntPrice
 
 object LogWriter {
 
   // TODO: make this generic
-  def write(log: Log[Price], filePath: String) = {
+  def write(log: Log[IntPrice], filePath: String) = {
 
-    val tradeHeader = Price.getCsvHeader
+    val tradeHeader = IntPrice.getCsvHeader
     val tradeData = log.toCsvString
     writeEvents(filePath, tradeHeader, tradeData)
   }

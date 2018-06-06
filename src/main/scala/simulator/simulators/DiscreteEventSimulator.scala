@@ -65,10 +65,18 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
       }
       numEvents += 1
       //      if (numEvents % 50 == 0) {
-        val orderbook = orderBooks.head
+
+      val orderbook = orderBooks.head
+      if (!orderbook.isValidState) {
+        val errString = "Order book state is not valid"
+        logger.error(errString)
+        throw new IllegalStateException(errString)
+      }
+
       orderbook.orderBookLog.addMidprice(newTime, orderbook.getMidPrice)
       orderbook.orderBookLog.addSpread(newTime, orderbook.getSpread)
-      //      }
+      orderbook.orderBookLog.addBidPrice(newTime, orderbook.getBidPrice)
+      orderbook.orderBookLog.addAskPrice(newTime, orderbook.getAskPrice)
 
       step(newTime)
 
