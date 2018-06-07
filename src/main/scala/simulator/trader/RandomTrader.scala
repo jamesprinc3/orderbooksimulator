@@ -23,37 +23,42 @@ class RandomTrader(ratios: Map[String, Double],
     extends Trader(traderParams) {
 
   private val logger = Logger(this.getClass)
-  private val buyPriceDistribution = distributions("buy_price")
-  private val sellPriceDistribution = distributions("sell_price")
-  private val buyPriceRelativeDistribution = inverseCdfDistributions("buy")
-  //  private val sellPriceRelativeDistribution = distributions(
-  //    "sell_price_relative")
-  private val sellPriceRelativeDistribution = inverseCdfDistributions("sell")
+  //  private val buyPriceDistribution = distributions("buy_price")
+  //  private val sellPriceDistribution = distributions("sell_price")
+  //  private val buyPriceRelativeDistribution = inverseCdfDistributions("buy")
+  //  //  private val sellPriceRelativeDistribution = distributions(
+  //  //    "sell_price_relative")
+  //  private val sellPriceRelativeDistribution = inverseCdfDistributions("sell")
 
-
-
-  private val buyOrderPriceCancellationDistribution = distributions(
-    "buy_cancel_price")
-  private val sellOrderPriceCancellationDistribution = distributions(
-    "sell_cancel_price")
-  private val buyMarketOrderSizeDistribution: TransformedDistr = distributions(
+  //  private val buyOrderPriceCancellationDistribution = distributions(
+  //    "buy_cancel_price")
+  //  private val sellOrderPriceCancellationDistribution = distributions(
+  //    "sell_cancel_price")
+  private val buyMarketOrderSizeDistribution: TransformedDistr = inverseCdfDistributions(
     "buy_market_size")
-  private val sellMarketOrderSizeDistribution: TransformedDistr = distributions(
+  private val sellMarketOrderSizeDistribution: TransformedDistr = inverseCdfDistributions(
     "sell_market_size")
-  private val intervalDistribution: TransformedDistr = distributions("interval")
+  private val intervalDistribution: TransformedDistr = inverseCdfDistributions("interval")
 
+  // Get price correlations with limit order sizes
   private val buyPriceSizeCorr: Double = correlations("buy_price_size")
   private val sellPriceSizeCorr: Double = correlations("sell_price_size")
 
-  private val buyPriceSizeCorrMatrix = DenseMatrix((1.0, buyPriceSizeCorr), (buyPriceSizeCorr, 1.0))
-  private val sellPriceSizeCorrMatrix = DenseMatrix((1.0, sellPriceSizeCorr), (sellPriceSizeCorr, 1.0))
+  private val buyPriceSizeCorrMatrix =
+    DenseMatrix((1.0, buyPriceSizeCorr), (buyPriceSizeCorr, 1.0))
+  private val sellPriceSizeCorrMatrix =
+    DenseMatrix((1.0, sellPriceSizeCorr), (sellPriceSizeCorr, 1.0))
 
   private val buyLimitOrderMutliDistr = new MultivariateDistribution(
-    distributions("buy_price_relative"),
-    distributions("buy_limit_size"), 1000, buyPriceSizeCorrMatrix)
+    inverseCdfDistributions("buy_price_relative"),
+    inverseCdfDistributions("buy_limit_size"),
+    1000,
+    buyPriceSizeCorrMatrix)
   private val sellLimitOrderMutliDistr = new MultivariateDistribution(
-    distributions("sell_price_relative"),
-    distributions("sell_limit_size"), 1000, buyPriceSizeCorrMatrix)
+    inverseCdfDistributions("sell_price_relative"),
+    inverseCdfDistributions("sell_limit_size"),
+    1000,
+    buyPriceSizeCorrMatrix)
 
   private val buyRatio = ratios("buy_sell_order_ratio")
   private val buyVolRatio = ratios("buy_sell_volume_ratio")
@@ -107,7 +112,9 @@ val midPrice = orderBook.getMidPrice
     List((orderTime, this, orderBook, order))
   }
 
-  private def generateLimitOrder(orderTime: LocalDateTime, side: Side.Value, midPrice: Double) = {
+  private def generateLimitOrder(orderTime: LocalDateTime,
+                                 side: Side.Value,
+                                 midPrice: Double) = {
     val (price, size) = side match {
       case Side.Bid =>
         val (relativePrice, size) = buyLimitOrderMutliDistr.sample()
@@ -120,7 +127,8 @@ val midPrice = orderBook.getMidPrice
     LimitOrder(orderTime, side, this, price, size)
   }
 
-  private def generateMarketOrder(orderTime: LocalDateTime, side: Side.Value) = {
+  private def generateMarketOrder(orderTime: LocalDateTime,
+                                  side: Side.Value) = {
     val size = side match {
       case Side.Bid => generateOrderSize(buyMarketOrderSizeDistribution)
       case Side.Ask => generateOrderSize(sellMarketOrderSizeDistribution)
@@ -133,33 +141,33 @@ val midPrice = orderBook.getMidPrice
     virtualTime.plusNanos((interval * 1e6).toLong)
   }
 
-  private def generateSample(side: Side.Value): Double = {
-    val sample = side match {
-      case Side.Bid => buyPriceRelativeDistribution.sample()
-      case Side.Ask => sellPriceRelativeDistribution.sample()
-    }
+  //  private def generateSample(side: Side.Value): Double = {
+  //    val sample = side match {
+  //      case Side.Bid => buyPriceRelativeDistribution.sample()
+  //      case Side.Ask => sellPriceRelativeDistribution.sample()
+  //    }
+  //
+  //    if (sample < 0) {
+  //      generateSample(side)
+  //    } else {
+  //      sample
+  //    }
+  //  }
 
-    if (sample < 0) {
-      generateSample(side)
-    } else {
-      sample
-    }
-  }
-
-  private def generateOrderPrice(side: Side.Value, midPrice: Double): Double = {
-    val sample = generateSample(side)
-
-    val price = side match {
-      case Side.Bid => midPrice - sample
-      case Side.Ask => midPrice + sample
-    }
-
-    if (price <= 0 || price.isNaN || price.isInfinite) {
-      generateOrderPrice(side, midPrice)
-    } else {
-      price
-    }
-  }
+  //  private def generateOrderPrice(side: Side.Value, midPrice: Double): Double = {
+  //    val sample = generateSample(side)
+  //
+  //    val price = side match {
+  //      case Side.Bid => midPrice - sample
+  //      case Side.Ask => midPrice + sample
+  //    }
+  //
+  //    if (price <= 0 || price.isNaN || price.isInfinite) {
+  //      generateOrderPrice(side, midPrice)
+  //    } else {
+  //      price
+  //    }
+  //  }
 
   private def generateOrderSize(sizeDist: TransformedDistr): Double = {
     val size = sizeDist.sample()

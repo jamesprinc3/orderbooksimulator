@@ -1,5 +1,7 @@
 package simulator.sampling
 
+import java.util.NoSuchElementException
+
 import breeze.stats.distributions.{ContinuousDistr, Uniform}
 
 import scala.math.BigDecimal.RoundingMode
@@ -15,8 +17,8 @@ class InverseCdfSampler(pairs: Seq[(BigDecimal, Double)], bucketWidth: BigDecima
     *
     */
   private def generateHashMap(pairs: Seq[(BigDecimal, Double)], bucketWidth: BigDecimal): Map[BigDecimal, Double] = {
-    // We have to add a dumb value on the end so that the indexing works of the cuff, this should really be engineered to not be such awful code. Alas, time is of the essence
-    val sortedPairs = (pairs ++ Seq((BigDecimal.decimal(1).setScale(2), 0.0))).sortBy(p => p._1)
+    // We have to add dumb values on the end so that the indexing works of the cuff, this should really be engineered to not be such awful code. Alas, time is of the essence
+    val sortedPairs = (Seq((BigDecimal.decimal(0).setScale(2), 0.0)) ++ pairs ++ Seq((BigDecimal.decimal(1).setScale(2), 0.0))).sortBy(p => p._1)
     var sampleMap = Map[BigDecimal, Double]()
 
     var index = 0
@@ -37,7 +39,16 @@ class InverseCdfSampler(pairs: Seq[(BigDecimal, Double)], bucketWidth: BigDecima
   override def sample(): Double = {
     val uniformSample = Uniform(0, 1).sample()
 
-    hashMap(BigDecimal.decimal(uniformSample).setScale(2, RoundingMode.HALF_UP))
+    //
+
+    try {
+      hashMap(BigDecimal.decimal(uniformSample).setScale(2, RoundingMode.HALF_UP))
+    } catch {
+      case e: NoSuchElementException =>
+        println(hashMap.keys.toSeq.sorted)
+        throw e
+    }
+
   }
 
   // TODO: maybe these could be given some more meaningful values?
