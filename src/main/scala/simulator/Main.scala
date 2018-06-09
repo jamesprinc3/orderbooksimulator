@@ -31,7 +31,6 @@ object Main {
 
     logger.debug(globalConfig.toString)
 
-
     simulateOrderBooks(conf: config.Config, globalConfig: Config)
 
   }
@@ -45,7 +44,8 @@ object Main {
       randomWalkSim.run()
 
       //      print(randomWalkSim.log.toCsvString)
-      LogWriter.write(randomWalkSim.log, s"/Users/jamesprince/project-data/random-walk/$x.csv")
+      LogWriter.write(randomWalkSim.log,
+        s"/Users/jamesprince/project-data/random-walk/$x.csv")
     })
   }
 
@@ -57,7 +57,8 @@ object Main {
     }
   }
 
-  private def simulateOrderBooks(conf: config.Config, globalConfig: Config): Unit = {
+  private def simulateOrderBooks(conf: config.Config,
+                                 globalConfig: Config): Unit = {
     val simRoot = globalConfig.simRoot
     val simPath = Path(simRoot)
 
@@ -83,11 +84,12 @@ object Main {
       val config = parseConfig(conf)
       val numTraders = config.numTraders
 
-      val traders = TraderFactory.getRandomTraders(numTraders,
-        config.ratios,
-        config.correlations,
-        config.inverseCdfDistributions,
-        config.distributions)
+      val traders =
+        TraderFactory.getRandomTraders(numTraders,
+          config.ratios,
+          config.correlations,
+          config.inverseCdfDistributions,
+          config.distributions)
       val orderBook = getOrderBook(orders)
       val simulator =
         new DiscreteEventSimulator(
@@ -108,6 +110,10 @@ object Main {
         logger.debug(
           s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
 
+        // Add final order book state to log
+        orderBook.getOrders.foreach(orderBook.orderBookLog.addOrderBookEntry)
+
+        // Write out logs to CSV files
         orderBook.orderBookLog.export(simRoot + simulatorNumber + "/")
 
         // Only write out per-trader data if multiple traders
@@ -152,6 +158,7 @@ object Main {
     val numTraders = conf.getInt("execution.numTraders")
     val simulationSeconds = conf.getInt("execution.simulationSeconds")
     val parallel = conf.getBoolean("execution.parallel")
+    val decimalPlaces = conf.getInt("precision.decimalPlaces")
     val logLevel = conf.getString("execution.logLevel")
     val simRootPath = conf.getString("paths.simRoot")
     val paramsPath = conf.getString("paths.params")
@@ -161,6 +168,7 @@ object Main {
                 simulationSeconds,
                 numTraders,
                 parallel,
+      decimalPlaces,
                 logLevel,
                 simRootPath,
                 paramsPath,

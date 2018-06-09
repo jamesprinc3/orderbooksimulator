@@ -151,6 +151,10 @@ class OrderBook(val askSide: OrderBookSide,
     askSide.getActiveOrders.size + bidSide.getActiveOrders.size
   }
 
+  def getOrders: Seq[OrderBookEntry] = {
+    bidSide.getActiveOrders.toSeq ++ askSide.getActiveOrders.toSeq
+  }
+
   override def step(newTime: LocalDateTime): Unit = {
     super.step(newTime)
     askSide.step(newTime)

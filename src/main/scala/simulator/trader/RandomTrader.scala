@@ -38,7 +38,7 @@ class RandomTrader(ratios: Map[String, Double],
     "buy_market_size")
   private val sellMarketOrderSizeDistribution: TransformedDistr = inverseCdfDistributions(
     "sell_market_size")
-  private val intervalDistribution: TransformedDistr = inverseCdfDistributions("interval")
+  private val intervalsDistribution: TransformedDistr = inverseCdfDistributions("intervals")
 
   // Get price correlations with limit order sizes
   private val buyPriceSizeCorr: Double = correlations("buy_price_size")
@@ -137,7 +137,7 @@ val midPrice = orderBook.getMidPrice
   }
 
   private def generateOrderTime() = {
-    val interval = generateInterval(intervalDistribution)
+    val interval = generateInterval(intervalsDistribution)
     virtualTime.plusNanos((interval * 1e6).toLong)
   }
 
@@ -179,9 +179,9 @@ val midPrice = orderBook.getMidPrice
   }
 
   private def generateInterval(intervalDist: TransformedDistr): Double = {
-    var interval = intervalDistribution.sample()
+    var interval = intervalsDistribution.sample()
     while (interval < 0) {
-      interval = intervalDistribution.sample()
+      interval = intervalsDistribution.sample()
     }
 
     interval

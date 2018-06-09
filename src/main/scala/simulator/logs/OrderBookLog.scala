@@ -5,7 +5,7 @@ import java.nio.file.{Files, Paths}
 import java.time.LocalDateTime
 
 import com.github.tototoshi.csv.CSVWriter
-import simulator.events.{Cancel, DoublePrice, Trade}
+import simulator.events.{Cancel, DoublePrice, OrderBookEntry, Trade}
 import simulator.order.{LimitOrder, MarketOrder, Order}
 
 import scala.collection.mutable.ListBuffer
@@ -20,6 +20,8 @@ class OrderBookLog() {
   var spreads: Log[DoublePrice] = new Log[DoublePrice]()
   var bestBids: Log[DoublePrice] = new Log[DoublePrice]()
   var bestAsks: Log[DoublePrice] = new Log[DoublePrice]()
+
+  var finalOrderBookEntries: Log[OrderBookEntry] = new Log[OrderBookEntry]()
 
   def addTrade(trade: Trade): Unit = {
     trades.add(trade)
@@ -49,9 +51,14 @@ class OrderBookLog() {
     bestAsks.add(DoublePrice(time, askPrice))
   }
 
+  def addOrderBookEntry(orderBookEntry: OrderBookEntry) = {
+    finalOrderBookEntries.add(orderBookEntry)
+  }
+
   def export(fileDir: String): Unit = {
     ensureDirectoryExists(fileDir)
 
+    // TODO: refactor these to use Log and LogWriter instead.
     writeOrderCsv(fileDir)
     writeTradeCsv(fileDir)
     writeCancelCsv(fileDir)
@@ -59,6 +66,8 @@ class OrderBookLog() {
     LogWriter.writeEvents(fileDir + "spreads.csv", DoublePrice.getCsvHeader, spreads.toCsvString)
     LogWriter.writeEvents(fileDir + "bestBids.csv", DoublePrice.getCsvHeader, bestBids.toCsvString)
     LogWriter.writeEvents(fileDir + "bestAsks.csv", DoublePrice.getCsvHeader, bestAsks.toCsvString)
+    LogWriter.writeEvents(fileDir + "finalOrderBook.csv", OrderBookEntry.getCsvHeader, finalOrderBookEntries.toCsvString)
+
   }
 
   private def writeOrderCsv(fileDir: String) = {

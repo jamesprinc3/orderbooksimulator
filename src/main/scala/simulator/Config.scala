@@ -13,6 +13,7 @@ case class Config(numReplications: Int = 1,
                   simulationSeconds: Int = 300,
                   numTraders: Int = 1,
                   parallel: Boolean = false,
+                  deicmalPlaces: Int = 2,
                   logLevel: Level,
                   simRoot: String = "",
                   orderBookPath: String = "",
@@ -28,6 +29,7 @@ object Config {
            simulationSeconds: Int,
            numTraders: Int,
            parallel: Boolean,
+           decimalPlaces: Int,
            logLevelStr: String,
            simRootPath: String,
            paramsPath: String,
@@ -40,19 +42,22 @@ object Config {
     val ratios = parseRatios(jsonAst)
     val correlations = parseCorrelations(jsonAst)
     val distributions = parseDistributions(jsonAst)
-    val inverseCdfs = parseInverseCdfs(jsonAst)
+    val inverseCdfs = parseInverseCdfs(jsonAst, decimalPlaces)
 
-    Config(numSimulations,
-           simulationSeconds,
-           numTraders,
-           parallel,
-           logLevel,
-           simRootPath,
-           orderBookPath,
-           ratios,
+    Config(
+      numSimulations,
+      simulationSeconds,
+      numTraders,
+      parallel,
+      decimalPlaces,
+      logLevel,
+      simRootPath,
+      orderBookPath,
+      ratios,
       correlations,
       inverseCdfs,
-           distributions)
+      distributions
+    )
   }
 
   object DistJsonProtocol extends DefaultJsonProtocol {
@@ -167,7 +172,7 @@ object Config {
     corrs
   }
 
-  def parseInverseCdfs(jsonAst: JsValue): Map[String, TransformedDistr] = {
+  def parseInverseCdfs(jsonAst: JsValue, decimalPlaces: Int): Map[String, TransformedDistr] = {
     jsonAst.asJsObject
       .fields("discreteDistributions")
       .asJsObject
@@ -182,14 +187,18 @@ object Config {
         val cy = obj._2.asJsObject.fields("cy") match {
           case JsArray(a) =>
             a.map {
-              case JsNumber(num) => BigDecimal.decimal(num.toDouble).setScale(2, RoundingMode.HALF_UP)
+              case JsNumber(num) =>
+                BigDecimal
+                  .decimal(num.toDouble)
+                  .setScale(decimalPlaces, RoundingMode.HALF_UP)
             }
         }
-        val bucketWidth = BigDecimal.decimal(0.01)
 
-        (obj._1, new TransformedDistr(new InverseCdfSampler(cy zip xs, bucketWidth), 0, 1))
+        (obj._1,
+          new TransformedDistr(new InverseCdfSampler(cy zip xs, decimalPlaces),
+            0,
+            1))
       })
-    //    Map[String, TransformedDistr]()
   }
 
   def parseDistributions(jsonAst: JsValue): Map[String, TransformedDistr] = {

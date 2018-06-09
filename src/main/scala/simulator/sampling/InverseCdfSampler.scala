@@ -9,21 +9,22 @@ import scala.math.BigDecimal.RoundingMode
 /**
   * PRE: Assume each entry in pairs is of form (boundary, sample)
   */
-class InverseCdfSampler(pairs: Seq[(BigDecimal, Double)], bucketWidth: BigDecimal) extends ContinuousDistr[Double] {
+class InverseCdfSampler(pairs: Seq[(BigDecimal, Double)], decimalPlaces: Int) extends ContinuousDistr[Double] {
 
-  val hashMap: Map[BigDecimal, Double] = generateHashMap(pairs, bucketWidth)
+  val hashMap: Map[BigDecimal, Double] = generateHashMap(pairs, decimalPlaces)
 
   /** Pre-process the cdf so that we can do O(1) lookup
     *
     */
-  private def generateHashMap(pairs: Seq[(BigDecimal, Double)], bucketWidth: BigDecimal): Map[BigDecimal, Double] = {
+  private def generateHashMap(pairs: Seq[(BigDecimal, Double)], decimalPlaces: Int): Map[BigDecimal, Double] = {
     // We have to add dumb values on the end so that the indexing works of the cuff, this should really be engineered to not be such awful code. Alas, time is of the essence
-    val sortedPairs = (Seq((BigDecimal.decimal(0).setScale(2), 0.0)) ++ pairs ++ Seq((BigDecimal.decimal(1).setScale(2), 0.0))).sortBy(p => p._1)
+    val sortedPairs = (Seq((BigDecimal.decimal(0).setScale(decimalPlaces), 0.0)) ++ pairs ++ Seq((BigDecimal.decimal(1).setScale(decimalPlaces), 0.0))).sortBy(p => p._1)
+    val bucketWidth = BigDecimal.decimal(Math.pow(10, -decimalPlaces))
     var sampleMap = Map[BigDecimal, Double]()
 
     var index = 0
     while (index < sortedPairs.length - 1) {
-      var key = sortedPairs(index)._1.setScale(2, RoundingMode.DOWN)
+      var key = sortedPairs(index)._1.setScale(decimalPlaces, RoundingMode.DOWN)
       val sample = sortedPairs(index)._2
 
       while (key <= sortedPairs(index + 1)._1) {
@@ -42,7 +43,7 @@ class InverseCdfSampler(pairs: Seq[(BigDecimal, Double)], bucketWidth: BigDecima
     //
 
     try {
-      hashMap(BigDecimal.decimal(uniformSample).setScale(2, RoundingMode.HALF_UP))
+      hashMap(BigDecimal.decimal(uniformSample).setScale(decimalPlaces, RoundingMode.HALF_UP))
     } catch {
       case e: NoSuchElementException =>
         println(hashMap.keys.toSeq.sorted)

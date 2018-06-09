@@ -19,22 +19,23 @@ class InverseCdfSamplerSpec extends FlatSpec {
     1.0 / (n - 1.0) * sum(((a - mean(a)) / astddev) :* ((b - mean(b)) / bstddev))
   }
 
-  private val bucketSize = BigDecimal.decimal(0.01)
+  private val decimalPlaces = 2
+  private val bucketWidth = BigDecimal.decimal(0.01)
   private val pairs = Seq((BigDecimal.decimal(0), 0.5),
     (BigDecimal.decimal(0.1), 1.0),
     (BigDecimal.decimal(0.2), 2.0))
-  private val smallInverseCdfSampler = new InverseCdfSampler(pairs, bucketSize)
+  private val smallInverseCdfSampler = new InverseCdfSampler(pairs, decimalPlaces)
   private val sortedKeys = smallInverseCdfSampler.hashMap.keys.toSeq.sorted
 
   "hashMap" should "produce equally spaced keys" in {
     assert(
       (sortedKeys drop 1, sortedKeys).zipped
         .map(_ - _)
-        .forall(v => v == bucketSize))
+        .forall(v => v == bucketWidth))
   }
 
   it should "produce correct number of keys" in {
-    assert(sortedKeys.length == BigDecimal.decimal(1) / bucketSize)
+    assert(sortedKeys.length == BigDecimal.decimal(1) / bucketWidth)
   }
 
   val norm = new breeze.stats.distributions.Gaussian(0, 1)
@@ -50,7 +51,7 @@ class InverseCdfSamplerSpec extends FlatSpec {
   }.map(y => BigDecimal.decimal(y))
 
   val normPairs = cumulatedYs zip xs
-  val normInverseCdfSampler = new InverseCdfSampler(normPairs, bucketSize)
+  val normInverseCdfSampler = new InverseCdfSampler(normPairs, decimalPlaces)
 
   it should "produce equally spaced keys for normal distribution" in {
     val normKeys = normInverseCdfSampler.hashMap.keys.toSeq.sorted
@@ -58,7 +59,7 @@ class InverseCdfSamplerSpec extends FlatSpec {
     assert(
       (normKeys drop 1, sortedKeys).zipped
         .map(_ - _)
-        .forall(v => v == bucketSize))
+        .forall(v => v == bucketWidth))
   }
 
   "sample" should "produce norm distribution" in {
