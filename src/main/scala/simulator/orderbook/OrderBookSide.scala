@@ -147,6 +147,29 @@ class OrderBookSide(side: Side.Value,
     cancelledOrder
   }
 
+  def cancelOrderAtPrice(targetPrice: Double): Option[OrderBookEntry] = {
+    val iter = activeOrders.iterator
+    var hasFoundOrder = false
+    var order: OrderBookEntry = null
+
+    while (iter.hasNext && !hasFoundOrder) {
+      order = iter.next()
+      hasFoundOrder = side match {
+        case Side.Bid => order.price < targetPrice
+        case Side.Ask => order.price > targetPrice
+      }
+    }
+
+    if (hasFoundOrder) {
+      order.trader.cancelOrder(order)
+      activeOrders.remove(order)
+      Some(order)
+    } else {
+      logger.debug("Couldn't find order that matched targetPrice: " + targetPrice)
+      None
+    }
+  }
+
   def cancelOrder(orderId: Int): Option[OrderBookEntry] = {
     activeOrders.find(order => order.orderId == orderId) match {
       case None => None

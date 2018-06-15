@@ -16,7 +16,7 @@ class RandomWalkSimulator(startPrice: Int, maxSteps: Int) extends Simulator {
     steps >= maxSteps
   }
 
-  override def updateState(): Unit = {
+  override def updateState(): Boolean = {
     if (Random.nextDouble() > 0.5) {
       price += 1
     } else {
@@ -26,6 +26,8 @@ class RandomWalkSimulator(startPrice: Int, maxSteps: Int) extends Simulator {
     log.add(new IntPrice(steps, price))
 
     steps += 1
+
+    true
   }
 
   override def initialState(): Unit = {

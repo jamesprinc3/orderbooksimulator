@@ -32,8 +32,8 @@ class OrderBook(val askSide: OrderBookSide,
 
   def isValidState: Boolean = {
     val bidLessAsk = getBidPrice < getAskPrice
-    val bidLessMid = getBidPrice < getMidPrice
-    val midLessAsk = getMidPrice < getAskPrice
+    val bidLessMid = getBidPrice <= getMidPrice
+    val midLessAsk = getMidPrice <= getAskPrice
 
     bidLessAsk && bidLessMid && midLessAsk
   }
@@ -102,14 +102,19 @@ class OrderBook(val askSide: OrderBookSide,
             case Side.Bid =>
               askSide.getBestPrice match {
                 case None => false
-                case Some(askPrice) => o.price > askPrice
+                // TODO: make this EPS value an argument of the program
+                case Some(askPrice) => askPrice - o.price < 0.001 //&& math.abs(o.price - askPrice) < 0.01
               }
             case Side.Ask =>
               bidSide.getBestPrice match {
                 case None => false
-                case Some(bidPrice) => o.price < bidPrice
+                case Some(bidPrice) => o.price - bidPrice < 0.001 //&& math.abs(o.price - bidPrice) < 0.01
               }
           }
+
+          //          if (limitCrossesSpread) {
+          //            logger.info("Limit order crosses spread: " + order.toString)
+          //          }
 
           !limitCrossesSpread
       }
@@ -122,6 +127,21 @@ class OrderBook(val askSide: OrderBookSide,
   def getOrder(orderId: Int): Option[OrderBookEntry] = {
     val allOrders = askSide.getActiveOrders ++ bidSide.getActiveOrders
     allOrders.find(order => order.orderId == orderId)
+  }
+
+  def cancelOrder(side: Side.Value, targetPrice: Double) = {
+    val cancelledOrder = side match {
+      case Side.Bid => bidSide.cancelOrderAtPrice(targetPrice)
+      case Side.Ask => askSide.cancelOrderAtPrice(targetPrice)
+    }
+
+    if (cancelledOrder.isDefined) {
+      val cancel = Cancel(virtualTime, cancelledOrder.get)
+      orderBookLog.addCancel(cancel)
+      true
+    } else {
+      false
+    }
   }
 
   def cancelOrder(orderId: Int): Boolean = {

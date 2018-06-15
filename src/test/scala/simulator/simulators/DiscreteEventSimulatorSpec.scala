@@ -6,10 +6,6 @@ import mocks.{MockOrderBook, MockPriority, MockTrader}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.FlatSpec
 import simulator.Side
-import simulator.order.Order
-import simulator.orderbook.priority.Priority
-import simulator.orderbook.{OrderBook, OrderBookFactory}
-import simulator.trader.{Trader, TraderFactory}
 
 class DiscreteEventSimulatorSpec extends FlatSpec with MockFactory {
 
@@ -24,25 +20,27 @@ class DiscreteEventSimulatorSpec extends FlatSpec with MockFactory {
 
   private val stubTrader = new MockTrader
 
-  "endCondition" should "be false at the start" in {
-    val simulator = new DiscreteEventSimulator(startTime,
-                                               endTime,
-                                               buyCancelRatio,
-                                               List(mockTrader),
-                                               List(mockOrderbook))
 
-    assert(!simulator.endCondition())
-  }
-
-  it should "be true when currentTime is after endTime" in {
-    val simulator = new DiscreteEventSimulator(endTime,
-                                               startTime,
-                                               buyCancelRatio,
-                                               List(mockTrader),
-                                               List(mockOrderbook))
-
-    assert(simulator.endCondition())
-  }
+  // TODO: change these tests to be for the simulator class
+  //  "endCondition" should "be false at the start" in {
+  //    val simulator = new DiscreteEventSimulator(startTime,
+  //                                               endTime,
+  //                                               buyCancelRatio,
+  //                                               List(mockTrader),
+  //                                               List(mockOrderbook))
+  //
+  //    assert(!simulator.endCondition())
+  //  }
+  //
+  //  it should "be true when currentTime is after endTime" in {
+  //    val simulator = new DiscreteEventSimulator(endTime,
+  //                                               startTime,
+  //                                               buyCancelRatio,
+  //                                               List(mockTrader),
+  //                                               List(mockOrderbook))
+  //
+  //    assert(simulator.endCondition())
+  //  }
 //
 //  "updateState" should "add event to queue when trader returns an order" in {
 //    class StubTrader extends MockTrader {

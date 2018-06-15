@@ -2,11 +2,11 @@ package simulator.simulators
 
 import java.time.{LocalDateTime, ZoneOffset}
 
-import breeze.stats.distributions.LogNormal
 import com.typesafe.scalalogging.Logger
 import simulator.Side
 import simulator.order.Order
 import simulator.orderbook.OrderBook
+import simulator.sampling.TransformedDistr
 import simulator.trader.Trader
 
 import scala.collection.mutable
@@ -16,6 +16,7 @@ import scala.util.Random
 class DiscreteEventSimulator(startTime: LocalDateTime,
                              endTime: LocalDateTime,
                              buyCancelRatio: Double,
+                             inverseCdfs: Map[String, TransformedDistr],
                              traders: List[Trader],
                              orderBooks: List[OrderBook])
   extends OrderBookSimulator(startTime, traders, orderBooks) {
@@ -31,9 +32,9 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
   private val logger = Logger(this.getClass)
 
   private val buyOrderPriceCancellationDistribution =
-    new LogNormal(3.11, 0.79)
+    inverseCdfs("buy_cancels_relative")
   private val sellOrderPriceCancellationDistribution =
-    new LogNormal(5.26, 0.38)
+    inverseCdfs("sell_cancels_relative")
 
   private var numEvents = 0
 
@@ -54,7 +55,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
     eventsToSubmit.foreach(eventQueue.enqueue(_))
   }
 
-  override def updateState(): Unit = {
+  override def updateState(): Boolean = {
     try {
       val event = eventQueue.dequeue()
       val newTime = event._1
@@ -65,19 +66,25 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
         throw new IllegalStateException(errString)
       }
       numEvents += 1
-      //      if (numEvents % 50 == 0) {
 
       val orderbook = orderBooks.head
-      if (!orderbook.isValidState) {
-        val errString = "Order book state is not valid"
-        logger.error(errString)
-        throw new IllegalStateException(errString)
-      }
 
-      orderbook.orderBookLog.addMidprice(newTime, orderbook.getMidPrice)
-      orderbook.orderBookLog.addSpread(newTime, orderbook.getSpread)
-      orderbook.orderBookLog.addBidPrice(newTime, orderbook.getBidPrice)
-      orderbook.orderBookLog.addAskPrice(newTime, orderbook.getAskPrice)
+      val midPrice = orderbook.getMidPrice
+      val spread = orderbook.getSpread
+      val bidPrice = orderbook.getBidPrice
+      val askPrice = orderbook.getAskPrice
+
+      orderbook.orderBookLog.addMidprice(newTime, midPrice)
+      orderbook.orderBookLog.addSpread(newTime, spread)
+      orderbook.orderBookLog.addBidPrice(newTime, bidPrice)
+      orderbook.orderBookLog.addAskPrice(newTime, askPrice)
+
+      if (!orderbook.isValidState) {
+        val errString = "Order book state is not valid, terminating simulation early"
+        logger.error(errString)
+        return false
+        //        throw new IllegalStateException(errString)
+      }
 
       step(newTime)
 
@@ -97,7 +104,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
         event._2.step(virtualTime, orderBooks)
 
       eventsToSubmit.foreach(eventQueue.enqueue(_))
-
+      true
     } catch {
       case e: IllegalStateException => throw e
 //      case NonFatal(t) => logger.error("We haz error: " + t)
@@ -106,6 +113,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
 
   }
 
+  // TODO: tidy this up
   private def cancelRandomOrder(orderBook: OrderBook) = {
     val isBuySide = Random.nextFloat() < buyCancelRatio
     val validOrders = if (isBuySide) {
@@ -115,12 +123,11 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
     }
     if (validOrders.nonEmpty) {
       val midPrice = orderBook.getMidPrice
-
-      //      val targetPrice = if (isBuySide) {
-      //        midPrice - buyOrderPriceCancellationDistribution.sample()
-      //      } else {
-      //        midPrice + sellOrderPriceCancellationDistribution.sample()
-      //      }
+      val targetPrice = if (isBuySide) {
+        midPrice - buyOrderPriceCancellationDistribution.sample()
+      } else {
+        midPrice + sellOrderPriceCancellationDistribution.sample()
+      }
       val sideToCancel = if (isBuySide) {
         Side.Bid
       } else {
@@ -129,7 +136,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
 
       orderBook.cancelHead(sideToCancel)
 
-      //      orderBook.cancelOrder(validOrders.head.orderId)
+      //      orderBook.cancelOrder(sideToCancel, targetPrice)
     }
   }
 

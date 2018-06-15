@@ -24,7 +24,7 @@ class TimeSliceSimulator(startTime: LocalDateTime,
     elapsedTimeSteps >= timeSteps
   }
 
-  override def updateState(): Unit = {
+  override def updateState(): Boolean = {
     step(virtualTime.plusNanos(increment.toNanos))
     logger.debug("UpdateState: " + elapsedTimeSteps + " time: " + virtualTime.toString)
 
@@ -36,6 +36,8 @@ class TimeSliceSimulator(startTime: LocalDateTime,
     events.foreach(event => event._3.submitOrder(event._4))
 
     elapsedTimeSteps += 1
+
+    true
   }
 
   // TODO: maybe implement

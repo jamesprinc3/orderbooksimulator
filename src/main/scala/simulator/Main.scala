@@ -72,16 +72,21 @@ object Main {
 
     val replicationIndices = getReplicationIndices(globalConfig)
 
-    val simsCompleted = new AtomicInteger(0)
+    val successfulReplications = new AtomicInteger(0)
 
     val startTime = LocalDateTime.now()
 
     val orders =
       OrderBookFactory.importOrders(globalConfig.orderBookPath, startTime)
 
-    replicationIndices.foreach(simulatorNumber => {
+    val conf_parse_t0 = System.nanoTime()
+    val config = parseConfig(conf)
+    val conf_parse_t1 = System.nanoTime()
+    logger.info("Config parsing took: " + ((conf_parse_t1 - conf_parse_t0) / 1e9) + " seconds")
 
-      val config = parseConfig(conf)
+    replicationIndices.foreach(replicationNumber => {
+
+
       val numTraders = config.numTraders
 
       val traders =
@@ -96,6 +101,7 @@ object Main {
           startTime,
           startTime.plusNanos((config.simulationSeconds * 1e9).toLong),
           config.ratios("buy_sell_cancel_ratio"),
+          config.inverseCdfDistributions,
           traders,
           List(orderBook))
 
@@ -108,23 +114,25 @@ object Main {
 
         val sim_t1 = System.nanoTime()
         logger.debug(
-          s"Simulation $simulatorNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
+          s"Simulation $replicationNumber took: " + ((sim_t1 - sim_t0) / 1e9) + " seconds")
 
         // Add final order book state to log
         orderBook.getOrders.foreach(orderBook.orderBookLog.addOrderBookEntry)
 
         // Write out logs to CSV files
-        orderBook.orderBookLog.export(simRoot + simulatorNumber + "/")
+        orderBook.orderBookLog.export(simRoot + replicationNumber + "/")
 
         // Only write out per-trader data if multiple traders
         if (numTraders > 1) {
           traders.foreach(
             t =>
               t.getTransactionLog.export(
-                simRoot + simulatorNumber + "/" + t.id.toString))
+                simRoot + replicationNumber + "/" + t.id.toString))
         }
 
-        simsCompleted.incrementAndGet()
+        if (simulator.success) {
+          successfulReplications.incrementAndGet()
+        }
       } catch {
         case e: IllegalStateException =>
           logger.error("Simulation failed: " + e)
@@ -132,8 +140,8 @@ object Main {
     })
 
     logger.info(
-      simsCompleted
-        .intValue() + "/" + globalConfig.numReplications + " simulations ran")
+      successfulReplications
+        .intValue() + "/" + globalConfig.numReplications + " replications were successful")
 
     val prog_t1 = System.nanoTime()
     logger.info(

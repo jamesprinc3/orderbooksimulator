@@ -3,10 +3,11 @@ package simulator.simulators
 trait Simulator {
 
   private val logger = com.typesafe.scalalogging.Logger(this.getClass)
+  var success = true
 
   def endCondition(): Boolean
 
-  def updateState(): Unit
+  def updateState(): Boolean
 
   def initialState(): Unit
 
@@ -15,7 +16,9 @@ trait Simulator {
 
     initialState()
     while (!endCondition()) {
-      updateState()
+      if (!updateState()) {
+        success = false
+      }
     }
     val t1 = System.nanoTime()
 
