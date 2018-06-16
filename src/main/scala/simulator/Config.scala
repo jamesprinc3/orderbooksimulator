@@ -177,6 +177,7 @@ object Config {
       .fields("discreteDistributions")
       .asJsObject
       .fields
+      .par
       .map(obj => {
         val xs = obj._2.asJsObject.fields("x") match {
           case JsArray(a) =>
@@ -198,7 +199,7 @@ object Config {
           new TransformedDistr(new InverseCdfSampler(cy zip xs, decimalPlaces),
             0,
             1))
-      })
+      }).seq
   }
 
   def parseDistributions(jsonAst: JsValue): Map[String, TransformedDistr] = {

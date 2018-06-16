@@ -4,7 +4,7 @@ import breeze.linalg.{DenseMatrix, cholesky}
 
 class MultivariateDistribution(d1: TransformedDistr,
                                d2: TransformedDistr,
-                               preload: Int = 500,
+                               numPreload: Int = 500,
                                val covMatrix: DenseMatrix[Double] =
                                DenseMatrix((1.0, 0.0), (0.0, 1.0))) {
 
@@ -17,7 +17,7 @@ class MultivariateDistribution(d1: TransformedDistr,
                             covMatrix: DenseMatrix[Double]): DenseMatrix[Double] = {
     val L = cholesky(covMatrix)
     val uncorrelatedSamples =
-      DenseMatrix(d1.sample(preload), d2.sample(preload))
+      DenseMatrix(d1.sample(numPreload), d2.sample(numPreload))
 
     val correlatedSamples = L * uncorrelatedSamples
 
