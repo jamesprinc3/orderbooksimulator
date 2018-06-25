@@ -136,7 +136,7 @@ class DiscreteEventSimulator(startTime: LocalDateTime,
 
       orderBook.cancelHead(sideToCancel)
 
-      //      orderBook.cancelOrder(sideToCancel, targetPrice)
+//      orderBook.cancelOrder(sideToCancel, targetPrice)
     }
   }
 
